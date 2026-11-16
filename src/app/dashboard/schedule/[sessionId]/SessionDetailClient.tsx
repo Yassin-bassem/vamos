@@ -15,6 +15,8 @@ import {
   History,
   AlertTriangle,
   Play,
+  Star,
+  Sparkles,
 } from 'lucide-react'
 import { dataService } from '@/lib/data-service'
 import { translations, Locale } from '@/lib/i18n'
@@ -39,6 +41,7 @@ export default function SessionDetailPage() {
   const [role, setRole] = useState<UserRole>('owner')
   const [session, setSession] = useState<Session | undefined>(undefined)
   const [logs, setLogs] = useState<any[]>([])
+  const [sessionEvals, setSessionEvals] = useState<any[]>([])
 
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('Player did not show up (Did not come) / لم يحضر اللاعب')
@@ -92,6 +95,8 @@ export default function SessionDetailPage() {
     setSession(sess)
     const allLogs = dataService.getState().scheduleLogs.filter((l) => l.session_id === sessionId)
     setLogs(allLogs)
+    const evs = dataService.getState().evaluations.filter((e) => e.session_id === sessionId)
+    setSessionEvals(evs)
 
     dataService.syncWithSupabase()
 
@@ -101,6 +106,7 @@ export default function SessionDetailPage() {
       const s = dataService.getSessionById(sessionId)
       setSession(s)
       setLogs(dataService.getState().scheduleLogs.filter((l) => l.session_id === sessionId))
+      setSessionEvals(dataService.getState().evaluations.filter((e) => e.session_id === sessionId))
     }
     window.addEventListener('vamos_state_updated', handleUpdate)
     return () => window.removeEventListener('vamos_state_updated', handleUpdate)
@@ -242,6 +248,74 @@ export default function SessionDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Official Coaching Evaluation & Feedback */}
+      {sessionEvals.length > 0 && (
+        <Card className="border-emerald-200 bg-gradient-to-br from-white to-emerald-50/20 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 border-b border-emerald-100 bg-emerald-50/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#176B50] text-white flex items-center justify-center font-bold">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base text-[#123C35]">
+                    {lang === 'ar' ? 'التقييم الفني والملاحظات المعتمدة' : 'Official Coaching Observations & Feedback'}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {lang === 'ar' ? 'ملاحظات وتوجيهات المدرب المسجلة لهذه الجلسة' : 'Detailed performance review, feedback, and next steps'}
+                  </CardDescription>
+                </div>
+              </div>
+
+              {sessionEvals[0]?.overall_rating && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold self-start sm:self-center">
+                  <Star className="w-4 h-4 fill-current text-amber-500" />
+                  <span>{sessionEvals[0].overall_rating} / 5</span>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="p-5 space-y-4">
+            {sessionEvals.map((ev) => (
+              <div key={ev.id} className="space-y-3">
+                {/* Session Observations / Coach Comments */}
+                {(ev.coach_comments || ev.notes || ev.session_summary) && (
+                  <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs">
+                    <p className="font-extrabold text-[#123C35] text-xs mb-1.5 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                      <Sparkles className="w-3.5 h-3.5 text-[#176B50]" />
+                      <span>{lang === 'ar' ? 'ملاحظات الأداء وملخص الجلسة:' : 'Coaching Observations & Summary:'}</span>
+                    </p>
+                    <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">
+                      {ev.coach_comments || ev.notes || ev.session_summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Next Session Focus */}
+                {ev.next_session_focus && (
+                  <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs shadow-2xs">
+                    <span className="font-extrabold text-[#176B50] block mb-1">
+                      {lang === 'ar' ? 'التركيز المقترح للجلسة القادمة:' : 'Next Session Focus:'}
+                    </span>
+                    <p className="leading-relaxed">{ev.next_session_focus}</p>
+                  </div>
+                )}
+
+                {/* Homework Drills */}
+                {ev.homework_drills && (
+                  <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-purple-950 text-xs shadow-2xs">
+                    <span className="font-extrabold text-purple-700 block mb-1">
+                      {lang === 'ar' ? 'تدريبات وتمارين منزلية موصى بها:' : 'Recommended Homework / Drills:'}
+                    </span>
+                    <p className="leading-relaxed">{ev.homework_drills}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Reject Session Modal */}
       {showRejectModal && (

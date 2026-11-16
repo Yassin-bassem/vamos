@@ -158,6 +158,10 @@ export interface Evaluation {
   overall_rating: number
   notes: string | null
   notes_ar: string | null
+  coach_comments?: string | null
+  session_summary?: string | null
+  next_session_focus?: string | null
+  homework_drills?: string | null
   created_at: string
   updated_at: string
   // Joined

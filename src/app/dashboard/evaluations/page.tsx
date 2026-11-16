@@ -10,6 +10,7 @@ import {
   Calendar,
   ArrowRight,
   Eye,
+  Sparkles,
 } from 'lucide-react'
 import { dataService } from '@/lib/data-service'
 import { translations, Locale } from '@/lib/i18n'
@@ -137,11 +138,43 @@ export default function EvaluationsPage() {
                   </div>
                 )}
 
-                {/* Notes */}
-                {ev.notes && (
-                  <p className="text-xs text-gray-600 bg-emerald-50/40 p-3 rounded-xl italic border border-emerald-100/60 leading-relaxed whitespace-pre-line">
-                    {ev.notes}
-                  </p>
+                {/* Coaching Observations & Feedback Section */}
+                {(ev.notes || ev.coach_comments || ev.session_summary || ev.next_session_focus || ev.homework_drills) && (
+                  <div className="mt-3 p-4 rounded-2xl bg-[#F8FAF9] border border-gray-200/80 space-y-2.5 text-xs">
+                    <p className="font-extrabold text-[#123C35] flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                      <Sparkles className="w-3.5 h-3.5 text-[#176B50]" />
+                      <span>{lang === 'ar' ? 'ملاحظات وتوجيهات المدرب الفنية' : 'Coaching Observations & Feedback'}</span>
+                    </p>
+
+                    {(ev.coach_comments || ev.notes || ev.session_summary) && (
+                      <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-2xs">
+                        <span className="font-bold text-gray-700 block mb-1">
+                          {lang === 'ar' ? 'ملاحظات الأداء وملخص الجلسة:' : 'Session Observations & Feedback:'}
+                        </span>
+                        <p className="text-gray-600 whitespace-pre-line leading-relaxed">
+                          {ev.coach_comments || ev.notes || ev.session_summary}
+                        </p>
+                      </div>
+                    )}
+
+                    {ev.next_session_focus && (
+                      <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100 text-emerald-950 shadow-2xs">
+                        <span className="font-bold block mb-1 text-[#176B50]">
+                          {lang === 'ar' ? 'التركيز المقترح للجلسة القادمة:' : 'Next Session Focus:'}
+                        </span>
+                        <p className="leading-relaxed">{ev.next_session_focus}</p>
+                      </div>
+                    )}
+
+                    {ev.homework_drills && (
+                      <div className="bg-purple-50/60 p-3 rounded-xl border border-purple-100 text-purple-950 shadow-2xs">
+                        <span className="font-bold block mb-1 text-purple-700">
+                          {lang === 'ar' ? 'تدريبات وتمارين مقترحة:' : 'Recommended Drills / Homework:'}
+                        </span>
+                        <p className="leading-relaxed">{ev.homework_drills}</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

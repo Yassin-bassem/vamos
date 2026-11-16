@@ -246,6 +246,9 @@ export default function EvaluateSessionPage() {
         overallRating,
         skills: skillRatings,
         notes: fullNotes,
+        coachComments: coachNotes,
+        nextFocus: nextFocus,
+        drills: drills,
       })
 
       toast.success(

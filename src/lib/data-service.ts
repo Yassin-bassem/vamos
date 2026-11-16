@@ -313,7 +313,22 @@ export async function syncFromSupabase() {
     // 6. Sync Evaluations
     const { data: supaEvaluations } = await supabase.from('evaluations').select('*')
     if (supaEvaluations) {
-      memoryState.evaluations = supaEvaluations
+      memoryState.evaluations = supaEvaluations.map((ev: any) => ({
+        id: ev.id,
+        player_id: ev.player_id,
+        coach_id: ev.coach_id,
+        session_id: ev.session_id,
+        evaluation_date: ev.submitted_at ? ev.submitted_at.split('T')[0] : getTodayDateStr(),
+        overall_rating: ev.overall_rating || 5,
+        notes: ev.notes || ev.coach_comments || ev.session_summary || null,
+        notes_ar: ev.notes_ar || null,
+        coach_comments: ev.coach_comments || null,
+        session_summary: ev.session_summary || null,
+        next_session_focus: ev.next_session_focus || null,
+        homework_drills: ev.homework_drills || null,
+        created_at: ev.created_at || new Date().toISOString(),
+        updated_at: ev.updated_at || new Date().toISOString(),
+      }))
     }
 
     persistState(memoryState)
@@ -1049,6 +1064,9 @@ export const dataService = {
     skills: Record<string, number> // skillKey -> score 1-5
     notes?: string
     notes_ar?: string
+    coachComments?: string
+    nextFocus?: string
+    drills?: string
   }): Evaluation => {
     const evalId =
       typeof crypto !== 'undefined' && crypto.randomUUID
@@ -1085,8 +1103,12 @@ export const dataService = {
       session_id: params.sessionId,
       evaluation_date: getTodayDateStr(),
       overall_rating: params.overallRating,
-      notes: params.notes || null,
+      notes: params.notes || params.coachComments || null,
       notes_ar: params.notes_ar || null,
+      coach_comments: params.coachComments || params.notes || null,
+      session_summary: params.coachComments || params.notes || null,
+      next_session_focus: params.nextFocus || null,
+      homework_drills: params.drills || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -1114,8 +1136,10 @@ export const dataService = {
               coach_id: validCoachId,
               session_id: params.sessionId,
               overall_rating: params.overallRating,
-              coach_comments: params.notes || null,
-              session_summary: params.notes || null,
+              coach_comments: params.coachComments || params.notes || null,
+              session_summary: params.coachComments || params.notes || null,
+              next_session_focus: params.nextFocus || null,
+              homework_drills: params.drills || null,
             },
           ])
           .then(({ error }) => {

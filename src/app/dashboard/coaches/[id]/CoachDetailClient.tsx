@@ -233,13 +233,23 @@ export default function CoachDetailPage() {
             evaluations.map((ev) => (
               <div
                 key={ev.id}
-                className="p-4 rounded-2xl bg-white border border-gray-100 flex items-center justify-between"
+                className="p-4 rounded-2xl bg-white border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
               >
-                <div>
-                  <p className="font-bold text-sm text-[#123C35]">{ev.evaluation_date}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{ev.notes}</p>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-extrabold text-sm text-[#123C35]">{ev.evaluation_date}</p>
+                    <span className="text-xs text-gray-400">• Player: {ev.player?.full_name || 'Academy Player'}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
+                    {ev.coach_comments || ev.notes || ev.session_summary || (lang === 'ar' ? 'لا توجد ملاحظات إضافية' : 'No comments')}
+                  </p>
+                  {ev.next_session_focus && (
+                    <p className="text-[11px] font-bold text-[#176B50]">
+                      {lang === 'ar' ? 'التركيز القادم:' : 'Next Focus:'} {ev.next_session_focus}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-1 font-bold text-xs text-amber-500">
+                <div className="flex items-center gap-1 font-bold text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 self-start sm:self-center shrink-0">
                   <Star className="w-3.5 h-3.5 fill-current" />
                   <span>{ev.overall_rating}/5</span>
                 </div>
