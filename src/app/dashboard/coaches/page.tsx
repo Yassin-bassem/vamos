@@ -58,7 +58,7 @@ export default function CoachesPage() {
 
   const t = translations[lang]
 
-  const handleCreateCoach = (e: React.FormEvent) => {
+  const handleCreateCoach = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError('')
 
@@ -73,8 +73,8 @@ export default function CoachesPage() {
 
     setIsSubmitting(true)
 
-    setTimeout(() => {
-      const res = dataService.createCoachAccount({
+    try {
+      const res = await dataService.createCoachAccount({
         full_name: fullName.trim(),
         full_name_ar: fullNameAr.trim() || fullName.trim(),
         username: username.trim(),
@@ -105,7 +105,10 @@ export default function CoachesPage() {
           res.error || (lang === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create coach account')
         )
       }
-    }, 300)
+    } catch (err: any) {
+      setIsSubmitting(false)
+      setFormError(err.message || (lang === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create coach account'))
+    }
   }
 
   const canCreateCoach = role === 'owner' || role === 'operations'

@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [lang, setLang] = useState<'en' | 'ar'>('en')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
 
@@ -30,8 +30,8 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
 
-    setTimeout(() => {
-      const res = dataService.loginWithCredentials(username, password)
+    try {
+      const res = await dataService.loginWithCredentials(username, password)
       setIsSubmitting(false)
 
       if (res.success && res.user) {
@@ -49,7 +49,15 @@ export default function LoginPage() {
         setErrorMsg(errorText)
         toast.error(errorText)
       }
-    }, 300)
+    } catch (err) {
+      setIsSubmitting(false)
+      const errorText =
+        lang === 'ar'
+          ? 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.'
+          : 'Error logging in. Please try again.'
+      setErrorMsg(errorText)
+      toast.error(errorText)
+    }
   }
 
   return (

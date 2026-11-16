@@ -18,6 +18,20 @@ import {
   UserRole,
 } from '@/types/database'
 import { PADEL_SKILLS } from '@/lib/constants'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
+
+// Helper to get Supabase browser client safely
+function getSupabase() {
+  if (typeof window === 'undefined') return null
+  try {
+    if (isSupabaseConfigured()) {
+      return createClient()
+    }
+  } catch (e) {
+    console.error('Failed to init Supabase client:', e)
+  }
+  return null
+}
 
 // ─── Initial Seed Data ────────────────────────────────────────────────────────
 
@@ -175,16 +189,135 @@ function persistState(state: AcademyState) {
   }
 }
 
+// ─── Realtime Supabase Background Synchronization ───────────────────────────
+
+let isSyncing = false
+export async function syncFromSupabase() {
+  if (isSyncing || typeof window === 'undefined') return
+  const supabase = getSupabase()
+  if (!supabase) return
+
+  isSyncing = true
+  try {
+    // 1. Sync Profiles
+    const { data: supaProfiles } = await supabase.from('profiles').select('*')
+    if (supaProfiles && supaProfiles.length > 0) {
+      const merged = [...SEED_PROFILES]
+      for (const sp of supaProfiles) {
+        const idx = merged.findIndex(
+          (p) => p.username?.toLowerCase() === sp.username?.toLowerCase() || p.id === sp.id
+        )
+        if (idx >= 0) {
+          merged[idx] = { ...merged[idx], ...sp }
+        } else {
+          merged.push(sp)
+        }
+      }
+      memoryState.profiles = merged
+    }
+
+    // 2. Sync Courts
+    const { data: supaCourts } = await supabase
+      .from('courts')
+      .select('*')
+      .order('court_number', { ascending: true })
+    if (supaCourts && supaCourts.length > 0) {
+      memoryState.courts = supaCourts.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        name_ar: c.name_ar,
+        description: c.notes || c.name,
+        is_indoor: c.is_indoor || false,
+        is_active: c.is_active ?? true,
+        sort_order: c.court_number || 1,
+        created_at: c.created_at || new Date().toISOString(),
+        updated_at: c.updated_at || new Date().toISOString(),
+      }))
+    }
+
+    // 3. Sync Players
+    const { data: supaPlayers } = await supabase.from('players').select('*')
+    if (supaPlayers) {
+      memoryState.players = supaPlayers
+    }
+
+    // 4. Sync Sessions
+    const { data: supaSessions } = await supabase.from('sessions').select('*')
+    if (supaSessions) {
+      memoryState.sessions = supaSessions.map((s: any) => ({
+        ...s,
+        date: s.start_time ? s.start_time.split('T')[0] : (s.date || getTodayDateStr()),
+      }))
+    }
+
+    persistState(memoryState)
+  } catch (err) {
+    console.warn('Sync from Supabase completed with notes:', err)
+  } finally {
+    isSyncing = false
+  }
+}
+
+// Auto-trigger sync on browser mount
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    syncFromSupabase()
+  }, 100)
+}
+
 // ─── Public Data Service API ──────────────────────────────────────────────────
 
 export const dataService = {
+  // Manual trigger for Supabase sync
+  syncWithSupabase: syncFromSupabase,
+
   // Authentication & Session
-  loginWithCredentials: (username: string, password: string): { success: boolean; user?: Profile; error?: string } => {
+  loginWithCredentials: async (
+    username: string,
+    password: string
+  ): Promise<{ success: boolean; user?: Profile; error?: string }> => {
     const cleanUser = username.trim().toLowerCase()
     const cleanPass = password.trim()
 
+    // 1. Try live Supabase check first
+    try {
+      const supabase = getSupabase()
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`username.ilike.${cleanUser},email.ilike.${cleanUser}`)
+          .eq('password', cleanPass)
+          .maybeSingle()
+
+        if (data) {
+          if (!data.is_active) {
+            return { success: false, error: 'Account is deactivated' }
+          }
+          const exists = memoryState.profiles.some((p) => p.id === data.id)
+          const updated = exists
+            ? memoryState.profiles.map((p) => (p.id === data.id ? data : p))
+            : [...memoryState.profiles, data]
+
+          persistState({
+            ...memoryState,
+            profiles: updated,
+            currentRole: data.role,
+            currentUserId: data.id,
+          })
+
+          return { success: true, user: data }
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase login check error, falling back to local state:', e)
+    }
+
+    // 2. Fall back to local memoryState
     const found = memoryState.profiles.find(
-      (p) => (p.username?.toLowerCase() === cleanUser || p.email?.toLowerCase() === cleanUser) && p.password === cleanPass
+      (p) =>
+        (p.username?.toLowerCase() === cleanUser || p.email?.toLowerCase() === cleanUser) &&
+        p.password === cleanPass
     )
 
     if (!found) {
@@ -211,14 +344,14 @@ export const dataService = {
     }
   },
 
-  createCoachAccount: (data: {
+  createCoachAccount: async (data: {
     full_name: string
     full_name_ar?: string
     username: string
     password: string
     phone?: string
     email?: string
-  }): { success: boolean; coach?: Profile; error?: string } => {
+  }): Promise<{ success: boolean; coach?: Profile; error?: string }> => {
     const cleanUser = data.username.trim().toLowerCase()
     const cleanPass = data.password.trim()
 
@@ -226,16 +359,24 @@ export const dataService = {
       return { success: false, error: 'Name, username and password are required' }
     }
 
-    const exists = memoryState.profiles.some(
-      (p) => p.username?.toLowerCase() === cleanUser || (data.email && p.email?.toLowerCase() === data.email.trim().toLowerCase())
+    const existsLocally = memoryState.profiles.some(
+      (p) =>
+        p.username?.toLowerCase() === cleanUser ||
+        (data.email && p.email?.toLowerCase() === data.email.trim().toLowerCase())
     )
 
-    if (exists) {
+    if (existsLocally) {
       return { success: false, error: 'Username or email is already taken' }
     }
 
+    // Standard valid UUID format for PostgreSQL UUID column
+    const coachId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : '00000000-0000-4000-8000-' + Date.now().toString().padStart(12, '0')
+
     const newCoach: Profile = {
-      id: `prof-coach-${Date.now()}`,
+      id: coachId,
       email: data.email?.trim() || `${cleanUser}@vamospadel.com`,
       username: cleanUser,
       password: cleanPass,
@@ -249,6 +390,32 @@ export const dataService = {
       updated_at: new Date().toISOString(),
     }
 
+    // 1. Try inserting into Supabase profiles
+    try {
+      const supabase = getSupabase()
+      if (supabase) {
+        const { error } = await supabase.from('profiles').insert([
+          {
+            id: newCoach.id,
+            username: newCoach.username,
+            password: newCoach.password,
+            email: newCoach.email,
+            full_name: newCoach.full_name,
+            full_name_ar: newCoach.full_name_ar,
+            role: 'coach',
+            phone: newCoach.phone,
+            is_active: true,
+          },
+        ])
+        if (error) {
+          console.warn('Supabase insert profile warning:', error.message)
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase profile insert skipped:', e)
+    }
+
+    // 2. Persist to local memoryState and localStorage
     persistState({
       ...memoryState,
       profiles: [...memoryState.profiles, newCoach],
@@ -321,8 +488,13 @@ export const dataService = {
   },
 
   createPlayer: (data: Partial<Player>): Player => {
+    const playerId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : '00000000-0000-4000-8000-' + Date.now().toString().padStart(12, '0')
+
     const newPlayer: Player = {
-      id: `player-${Date.now()}`,
+      id: playerId,
       full_name: data.full_name || 'New Player',
       full_name_ar: data.full_name_ar || null,
       email: data.email || null,
@@ -338,6 +510,30 @@ export const dataService = {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
+
+    try {
+      const supabase = getSupabase()
+      if (supabase) {
+        supabase
+          .from('players')
+          .insert([
+            {
+              id: newPlayer.id,
+              full_name: newPlayer.full_name,
+              full_name_ar: newPlayer.full_name_ar,
+              email: newPlayer.email,
+              phone: newPlayer.phone,
+              level: newPlayer.level,
+              notes: newPlayer.notes,
+              is_active: true,
+            },
+          ])
+          .then(() => {})
+      }
+    } catch (e) {
+      console.warn('Supabase player insert skipped:', e)
+    }
+
     persistState({
       ...memoryState,
       players: [newPlayer, ...memoryState.players],
@@ -500,7 +696,10 @@ export const dataService = {
       return { success: false, error: conflict.reason }
     }
 
-    const newSessionId = `sess-${Date.now()}`
+    const newSessionId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : '00000000-0000-4000-8000-' + Date.now().toString().padStart(12, '0')
     const coach = memoryState.profiles.find((p) => p.id === params.coachId)
     const court = memoryState.courts.find((c) => c.id === params.courtId)
 
