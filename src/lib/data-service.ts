@@ -100,7 +100,7 @@ export const SEED_SCHEDULE_LOGS: ScheduleChangeLog[] = []
 
 // ─── Local State Management with LocalStorage ────────────────────────────────
 
-const STORAGE_KEY = 'vamos_academy_clean_v8'
+const STORAGE_KEY = 'vamos_academy_v9_auth'
 
 interface AcademyState {
   profiles: Profile[]
@@ -112,8 +112,8 @@ interface AcademyState {
   skillScores: EvaluationSkillScore[]
   coachAttendance: CoachAttendance[]
   scheduleLogs: ScheduleChangeLog[]
-  currentRole: UserRole
-  currentUserId: string
+  currentRole: UserRole | null
+  currentUserId: string | null
   language: 'en' | 'ar'
 }
 
@@ -129,8 +129,8 @@ function getInitialState(): AcademyState {
       skillScores: SEED_SKILL_SCORES,
       coachAttendance: SEED_COACH_ATTENDANCE,
       scheduleLogs: SEED_SCHEDULE_LOGS,
-      currentRole: 'owner',
-      currentUserId: 'prof-owner-1',
+      currentRole: null,
+      currentUserId: null,
       language: 'en',
     }
   }
@@ -150,6 +150,8 @@ function getInitialState(): AcademyState {
         skillScores: parsed.skillScores || SEED_SKILL_SCORES,
         coachAttendance: parsed.coachAttendance || SEED_COACH_ATTENDANCE,
         scheduleLogs: parsed.scheduleLogs || SEED_SCHEDULE_LOGS,
+        currentRole: parsed.currentRole || null,
+        currentUserId: parsed.currentUserId || null,
       }
     }
   } catch (e) {
@@ -166,8 +168,8 @@ function getInitialState(): AcademyState {
     skillScores: SEED_SKILL_SCORES,
     coachAttendance: SEED_COACH_ATTENDANCE,
     scheduleLogs: SEED_SCHEDULE_LOGS,
-    currentRole: 'owner',
-    currentUserId: 'prof-owner-1',
+    currentRole: null,
+    currentUserId: null,
     language: 'en',
   }
 }
@@ -342,6 +344,15 @@ export const dataService = {
       document.cookie = 'vamos_demo_role=; path=/; max-age=0'
       document.cookie = 'vamos_user_id=; path=/; max-age=0'
     }
+    persistState({
+      ...memoryState,
+      currentRole: null,
+      currentUserId: null,
+    })
+  },
+
+  isAuthenticated: (): boolean => {
+    return !!(memoryState.currentUserId && memoryState.currentRole)
   },
 
   createCoachAccount: async (data: {
@@ -428,10 +439,13 @@ export const dataService = {
   getState: () => memoryState,
 
   getCurrentUser: (): Profile => {
-    return memoryState.profiles.find((p) => p.id === memoryState.currentUserId) || memoryState.profiles[0]
+    return (
+      memoryState.profiles.find((p) => p.id === memoryState.currentUserId) ||
+      memoryState.profiles[0]
+    )
   },
 
-  getCurrentRole: (): UserRole => memoryState.currentRole,
+  getCurrentRole: (): UserRole => memoryState.currentRole || 'coach',
 
   setRole: (role: UserRole, userId?: string) => {
     const user = userId 
@@ -506,7 +520,7 @@ export const dataService = {
       emergency_contact_phone: data.emergency_contact_phone || null,
       is_active: true,
       avatar_url: null,
-      created_by: memoryState.currentUserId,
+      created_by: memoryState.currentUserId || 'system',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -723,7 +737,7 @@ export const dataService = {
       is_recurring: false,
       recurrence_rule: null,
       parent_session_id: null,
-      created_by: memoryState.currentUserId,
+      created_by: memoryState.currentUserId || 'system',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -735,13 +749,13 @@ export const dataService = {
       status: 'registered',
       registered_at: new Date().toISOString(),
       notes: null,
-      registered_by: memoryState.currentUserId,
+      registered_by: memoryState.currentUserId || 'system',
     }))
 
     const log: ScheduleChangeLog = {
       id: `log-${Date.now()}`,
       session_id: newSessionId,
-      changed_by: memoryState.currentUserId,
+      changed_by: memoryState.currentUserId || 'system',
       change_type: 'created',
       old_values: null,
       new_values: {
@@ -823,7 +837,7 @@ export const dataService = {
     const log: ScheduleChangeLog = {
       id: `log-${Date.now()}`,
       session_id: sessionId,
-      changed_by: memoryState.currentUserId,
+      changed_by: memoryState.currentUserId || 'system',
       change_type: updates.status === 'cancelled' ? 'cancelled' : 'rescheduled',
       old_values: {
         date: existing.date,

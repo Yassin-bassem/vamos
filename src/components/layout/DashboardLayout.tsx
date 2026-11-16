@@ -1,23 +1,53 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { TopNav } from './TopNav'
 import { dataService } from '@/lib/data-service'
 import { Locale } from '@/lib/i18n'
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [lang, setLang] = useState<Locale>('en')
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
+    // Check if user is authenticated
+    if (!dataService.isAuthenticated()) {
+      setIsAuthenticated(false)
+      router.replace('/auth/login')
+      return
+    }
+
+    setIsAuthenticated(true)
     setLang(dataService.getLanguage())
+
     const handleUpdate = () => {
+      if (!dataService.isAuthenticated()) {
+        setIsAuthenticated(false)
+        router.replace('/auth/login')
+        return
+      }
       setLang(dataService.getLanguage())
     }
+
     window.addEventListener('vamos_state_updated', handleUpdate)
     return () => window.removeEventListener('vamos_state_updated', handleUpdate)
-  }, [])
+  }, [router])
+
+  // If not yet authenticated or redirecting, display clean loading screen
+  if (isAuthenticated !== true) {
+    return (
+      <div className="min-h-screen bg-[#0F222D] flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg p-1 mb-4 ring-4 ring-[#4D97B8]/30 animate-pulse">
+          <img src="/logo.png" alt="VAMOS" className="w-full h-full object-cover scale-105 rounded-full" />
+        </div>
+        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#4D97B8]"></div>
+      </div>
+    )
+  }
 
   const isRtl = lang === 'ar'
 

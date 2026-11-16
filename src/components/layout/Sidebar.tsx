@@ -210,13 +210,13 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-full bg-[#162E3B] border border-[#4D97B8]/40 flex items-center justify-center font-bold text-xs text-white shrink-0">
-              {currentUser.full_name.slice(0, 2).toUpperCase()}
+              {currentUser?.full_name ? currentUser.full_name.slice(0, 2).toUpperCase() : 'VA'}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-white truncate">
                 {lang === 'ar'
-                  ? currentUser.full_name_ar || currentUser.full_name
-                  : currentUser.full_name}
+                  ? currentUser?.full_name_ar || currentUser?.full_name || ''
+                  : currentUser?.full_name || ''}
               </p>
               <p className="text-[10px] text-[#86C2DE] truncate font-medium">
                 {roleBadgeTitle}

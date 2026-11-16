@@ -15,21 +15,30 @@ import Link from 'next/link'
 
 export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
   const [lang, setLang] = useState<Locale>('en')
-  const [role, setRole] = useState<UserRole>('owner')
+  const [role, setRole] = useState<UserRole>(dataService.getCurrentRole())
   const [currentUser, setCurrentUser] = useState(dataService.getCurrentUser())
-  const [todayAtt, setTodayAtt] = useState(dataService.getTodayCoachAttendance(dataService.getCurrentUser().id))
+  const [todayAtt, setTodayAtt] = useState(() => {
+    const u = dataService.getCurrentUser()
+    return u ? dataService.getTodayCoachAttendance(u.id) : undefined
+  })
 
   useEffect(() => {
     setLang(dataService.getLanguage())
     setRole(dataService.getCurrentRole())
-    setCurrentUser(dataService.getCurrentUser())
-    setTodayAtt(dataService.getTodayCoachAttendance(dataService.getCurrentUser().id))
+    const u = dataService.getCurrentUser()
+    setCurrentUser(u)
+    if (u) {
+      setTodayAtt(dataService.getTodayCoachAttendance(u.id))
+    }
 
     const handleUpdate = () => {
       setLang(dataService.getLanguage())
       setRole(dataService.getCurrentRole())
-      setCurrentUser(dataService.getCurrentUser())
-      setTodayAtt(dataService.getTodayCoachAttendance(dataService.getCurrentUser().id))
+      const updatedUser = dataService.getCurrentUser()
+      setCurrentUser(updatedUser)
+      if (updatedUser) {
+        setTodayAtt(dataService.getTodayCoachAttendance(updatedUser.id))
+      }
     }
     window.addEventListener('vamos_state_updated', handleUpdate)
     return () => window.removeEventListener('vamos_state_updated', handleUpdate)
@@ -45,6 +54,7 @@ export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
 
   const handleCoachQuickCheckIn = () => {
     const user = dataService.getCurrentUser()
+    if (!user) return
     if (!todayAtt) {
       dataService.coachCheckIn(user.id)
       toast.success(lang === 'ar' ? 'تم تسجيل حضورك بنجاح' : 'Check-in recorded successfully!')
@@ -151,7 +161,7 @@ export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
             }`}
           />
           <span className="font-bold">
-            {lang === 'ar' ? currentUser.full_name_ar || currentUser.full_name : currentUser.full_name}
+            {lang === 'ar' ? currentUser?.full_name_ar || currentUser?.full_name || '' : currentUser?.full_name || ''}
           </span>
           <span className="text-[11px] text-gray-500">
             ({roleLabel})
