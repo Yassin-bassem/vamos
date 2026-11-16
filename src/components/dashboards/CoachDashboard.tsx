@@ -185,7 +185,7 @@ export function CoachDashboard() {
                 {/* Action buttons (Touch-friendly for mobile courtside use) */}
                 <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                   <Link
-                    href={`/dashboard/schedule/${sess.id}`}
+                    href={`/dashboard/schedule/view?id=${sess.id}`}
                     className="text-xs font-bold text-gray-600 hover:text-[#123C35] flex items-center gap-1"
                   >
                     <span>{t.details}</span>
@@ -207,7 +207,7 @@ export function CoachDashboard() {
 
                     {/* Submit Evaluation Button */}
                     <Link
-                      href={`/dashboard/schedule/${sess.id}/evaluate`}
+                      href={`/dashboard/schedule/evaluate?id=${sess.id}`}
                       className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-sm ${
                         isCompleted
                           ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'

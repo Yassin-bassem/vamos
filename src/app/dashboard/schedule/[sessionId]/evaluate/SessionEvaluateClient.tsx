@@ -149,7 +149,7 @@ export default function EvaluateSessionPage() {
       setNextFocus('')
       setDrills('')
     } else {
-      router.push(`/dashboard/schedule/${session.id}`)
+      router.push(`/dashboard/schedule/view?id=${session.id}`)
     }
   }
 
@@ -158,7 +158,7 @@ export default function EvaluateSessionPage() {
       {/* Top back navigation */}
       <div>
         <Link
-          href={`/dashboard/schedule/${session.id}`}
+          href={`/dashboard/schedule/view?id=${session.id}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-[#176B50] hover:text-[#123C35] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

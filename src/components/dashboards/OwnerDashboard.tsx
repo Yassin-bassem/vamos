@@ -213,7 +213,7 @@ export function OwnerDashboard() {
                             </td>
                             <td className="py-3.5 px-3 text-right">
                               <Link
-                                href={`/dashboard/coaches/${c.id}`}
+                                href={`/dashboard/coaches/view?id=${c.id}`}
                                 className="inline-flex items-center gap-1 text-xs font-bold text-[#176B50] hover:text-[#123C35]"
                               >
                                 {lang === 'ar' ? 'الملف' : 'Profile'}
@@ -263,7 +263,7 @@ export function OwnerDashboard() {
                     </div>
 
                     <Link
-                      href={`/dashboard/players/${p.id}`}
+                      href={`/dashboard/players/view?id=${p.id}`}
                       className="p-2 rounded-lg bg-gray-50 hover:bg-[#C7F36B]/30 text-[#176B50] transition-colors"
                     >
                       <ArrowUpRight className="w-4 h-4" />

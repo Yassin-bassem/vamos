@@ -180,7 +180,7 @@ export default function SessionDetailPage() {
 
             {/* Evaluate Button */}
             <Link
-              href={`/dashboard/schedule/${session.id}/evaluate`}
+              href={`/dashboard/schedule/evaluate?id=${session.id}`}
               className="px-4 py-2 rounded-xl text-xs font-black bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
             >
               <Award className="w-4 h-4" />
@@ -225,7 +225,7 @@ export default function SessionDetailPage() {
 
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/dashboard/players/${player.id}`}
+                      href={`/dashboard/players/view?id=${player.id}`}
                       className="text-xs font-bold text-[#176B50] hover:underline"
                     >
                       {lang === 'ar' ? 'الملف' : 'Profile'} →

@@ -189,7 +189,7 @@ export default function PerformancePage() {
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <Link
-                            href={`/dashboard/coaches/${c.id}`}
+                            href={`/dashboard/coaches/view?id=${c.id}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-[#176B50] hover:underline"
                           >
                             <span>{lang === 'ar' ? 'الملف' : 'Profile'}</span>

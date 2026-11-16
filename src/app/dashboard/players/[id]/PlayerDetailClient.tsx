@@ -282,7 +282,7 @@ export default function PlayerProfilePage() {
                 </div>
 
                 <Link
-                  href={`/dashboard/schedule/${s.id}`}
+                  href={`/dashboard/schedule/view?id=${s.id}`}
                   className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   {t.details}

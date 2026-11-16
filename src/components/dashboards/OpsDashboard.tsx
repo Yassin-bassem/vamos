@@ -189,7 +189,7 @@ export function OpsDashboard() {
                   {/* Right: Actions */}
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <Link
-                      href={`/dashboard/schedule/${sess.id}`}
+                      href={`/dashboard/schedule/view?id=${sess.id}`}
                       className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors"
                     >
                       {t.details}
