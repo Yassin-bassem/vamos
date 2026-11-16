@@ -523,12 +523,20 @@ CREATE POLICY "settings_modify_owner" ON public.academy_settings FOR ALL USING (
 -- SEED DATA (Demo - Development Only)
 -- ============================================================
 
--- Insert courts
+-- Insert 12 courts
 INSERT INTO public.courts (name, name_ar, court_number) VALUES
   ('Court 1', 'ملعب 1', 1),
   ('Court 2', 'ملعب 2', 2),
   ('Court 3', 'ملعب 3', 3),
-  ('Court 4', 'ملعب 4', 4);
+  ('Court 4', 'ملعب 4', 4),
+  ('Court 5', 'ملعب 5', 5),
+  ('Court 6', 'ملعب 6', 6),
+  ('Court 7', 'ملعب 7', 7),
+  ('Court 8', 'ملعب 8', 8),
+  ('Court 9', 'ملعب 9', 9),
+  ('Court 10', 'ملعب 10', 10),
+  ('Court 11', 'ملعب 11', 11),
+  ('Court 12', 'ملعب 12', 12);
 
 -- Insert academy settings
 INSERT INTO public.academy_settings (key, value) VALUES

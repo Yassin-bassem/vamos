@@ -2,15 +2,14 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { toast } from 'sonner'
-import { Eye, EyeOff, Loader2, Lock, User, Shield, Info } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Lock, User, Shield } from 'lucide-react'
 import { dataService } from '@/lib/data-service'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [username, setUsername] = useState('zaghloul')
-  const [password, setPassword] = useState('2580')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -31,7 +30,6 @@ export default function LoginPage() {
 
     setIsSubmitting(true)
 
-    // Authenticate through the centralized dataService
     setTimeout(() => {
       const res = dataService.loginWithCredentials(username, password)
       setIsSubmitting(false)
@@ -39,8 +37,8 @@ export default function LoginPage() {
       if (res.success && res.user) {
         toast.success(
           lang === 'ar'
-            ? `مرحباً بك، ${res.user.full_name_ar || res.user.full_name} (${res.user.role === 'owner' ? 'مالك الأكاديمية' : res.user.role === 'operations' ? 'إدارة العمليات' : 'مدرب بادل'})`
-            : `Welcome back, ${res.user.full_name} (${res.user.role === 'owner' ? 'Academy Owner' : res.user.role === 'operations' ? 'Operations' : 'Coach'})`
+            ? `مرحباً بك، ${res.user.full_name_ar || res.user.full_name}`
+            : `Welcome back, ${res.user.full_name}`
         )
         router.push('/dashboard')
       } else {
@@ -51,7 +49,7 @@ export default function LoginPage() {
         setErrorMsg(errorText)
         toast.error(errorText)
       }
-    }, 350)
+    }, 300)
   }
 
   return (
@@ -109,32 +107,29 @@ export default function LoginPage() {
         <div className="bg-white rounded-3xl border border-[#D5E5ED] shadow-xl overflow-hidden">
           {/* Header with official VAMOS circular logo */}
           <div className="bg-gradient-to-b from-[#162E3B] to-[#0F222D] text-white p-8 text-center relative overflow-hidden">
-            {/* Subtle glow behind logo */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#4D97B8]/20 rounded-full blur-2xl pointer-events-none" />
-
             <div className="relative z-10 flex flex-col items-center">
-              {/* Official VAMOS Logo Image */}
-              <div className="w-24 h-24 rounded-full bg-white p-1 shadow-lg ring-4 ring-[#4D97B8]/30 flex items-center justify-center overflow-hidden mb-4">
+              {/* Official VAMOS White Circle Logo */}
+              <div className="w-28 h-28 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden mb-4 p-1 ring-4 ring-[#4D97B8]/40">
                 <img
                   src="/logo.png"
                   alt="VAMOS Padel Academy"
-                  className="w-full h-full object-contain rounded-full"
+                  className="w-full h-full object-cover scale-105 rounded-full"
                 />
               </div>
 
               <h1 className="text-2xl font-black tracking-wider text-white">VAMOS</h1>
               <p className="text-[11px] font-bold tracking-[0.25em] text-[#86C2DE] uppercase mt-0.5">
-                {lang === 'ar' ? 'أكاديمية البادل الاحترافية' : 'PADEL ACADEMY'}
+                {lang === 'ar' ? 'أكاديمية البادل' : 'PADEL ACADEMY'}
               </p>
-              <p className="text-xs text-white/70 mt-2 max-w-xs">
+              <p className="text-xs text-white/70 mt-1.5">
                 {lang === 'ar'
-                  ? 'تسجيل الدخول إلى نظام إدارة الأكاديمية'
-                  : 'Academy Operations & Management Portal'}
+                  ? 'تسجيل الدخول إلى النظام'
+                  : 'Sign in to access academy portal'}
               </p>
             </div>
           </div>
 
-          {/* Form Area */}
+          {/* Form Area - Strict typing only */}
           <div className="p-8">
             {errorMsg && (
               <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
@@ -182,7 +177,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -193,84 +188,18 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-[#4D97B8] hover:bg-[#3D85A5] text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-[#4D97B8] hover:bg-[#3D85A5] text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer mt-3"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{lang === 'ar' ? 'جارٍ تسجيل الدخول...' : 'Signing In...'}</span>
+                    <span>{lang === 'ar' ? 'جارٍ التحقق والتسجيل...' : 'Signing In...'}</span>
                   </>
                 ) : (
                   <span>{lang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}</span>
                 )}
               </button>
             </form>
-
-            {/* Quick credentials reference note */}
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                <Info className="w-3.5 h-3.5 text-[#4D97B8]" />
-                <span>{lang === 'ar' ? 'بيانات الحسابات المصرحة' : 'Authorized Access Credentials'}</span>
-              </div>
-
-              <div className="space-y-1.5 text-xs">
-                <div
-                  onClick={() => {
-                    setUsername('zaghloul')
-                    setPassword('2580')
-                  }}
-                  className="p-2.5 rounded-xl bg-[#F0F6FA] hover:bg-[#E4F0F7] border border-[#D5E5ED] cursor-pointer transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="font-bold text-[#162E3B]">
-                      {lang === 'ar' ? 'المالك (Owner):' : 'Owner:'}
-                    </span>
-                    <span className="font-mono text-gray-600 text-[11px]">zaghloul</span>
-                  </div>
-                  <span className="font-mono text-xs text-gray-500">2580</span>
-                </div>
-
-                <div
-                  onClick={() => {
-                    setUsername('nada')
-                    setPassword('4567')
-                  }}
-                  className="p-2.5 rounded-xl bg-[#F0F6FA] hover:bg-[#E4F0F7] border border-[#D5E5ED] cursor-pointer transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="font-bold text-[#162E3B]">
-                      {lang === 'ar' ? 'العمليات (Operations):' : 'Operations:'}
-                    </span>
-                    <span className="font-mono text-gray-600 text-[11px]">nada</span>
-                  </div>
-                  <span className="font-mono text-xs text-gray-500">4567</span>
-                </div>
-
-                <div
-                  onClick={() => {
-                    setUsername('ahmed')
-                    setPassword('1234')
-                  }}
-                  className="p-2.5 rounded-xl bg-[#F0F6FA] hover:bg-[#E4F0F7] border border-[#D5E5ED] cursor-pointer transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="font-bold text-[#162E3B]">
-                      {lang === 'ar' ? 'المدرب (Coach Ahmed):' : 'Coach Ahmed:'}
-                    </span>
-                    <span className="font-mono text-gray-600 text-[11px]">ahmed</span>
-                  </div>
-                  <span className="font-mono text-xs text-gray-500">1234</span>
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-400 mt-2 text-center">
-                {lang === 'ar'
-                  ? 'يمكن إنشاء حسابات مدربين جديدة من قبل المالك أو مدير العمليات.'
-                  : 'New coach accounts can be created from Owner or Operations portal.'}
-              </p>
-            </div>
           </div>
         </div>
 

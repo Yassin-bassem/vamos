@@ -74,11 +74,11 @@ export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
         </button>
 
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-white p-0.5 border border-[#4D97B8]/40 shadow-xs flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-full bg-white shadow-xs flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-[#4D97B8]/30">
             <img
               src="/logo.png"
               alt="VAMOS Logo"
-              className="w-full h-full object-contain rounded-full"
+              className="w-full h-full object-cover scale-105 rounded-full"
             />
           </div>
           <div>

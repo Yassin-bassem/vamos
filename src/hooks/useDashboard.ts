@@ -37,39 +37,22 @@ export interface OwnerStats {
   monthlyActivity: Array<{ day: number; completed: number; cancelled: number }>
 }
 
-const MOCK_OWNER_STATS: OwnerStats = {
-  totalActiveCoaches: 6,
-  totalActivePlayers: 142,
-  todaySessions: 8,
-  completedThisMonth: 87,
-  cancelledThisMonth: 5,
-  coachAttendanceRate: 96,
-  recentSessions: [
-    { id: '1', title: 'Private - Ahmed Al-Rashid', date: format(new Date(), 'yyyy-MM-dd'), start_time: '09:00', status: 'completed', coach_name: 'Coach Sara', player_names: ['Ahmed Al-Rashid'] },
-    { id: '2', title: 'Group Session', date: format(new Date(), 'yyyy-MM-dd'), start_time: '10:00', status: 'completed', coach_name: 'Coach Khalid', player_names: ['Omar', 'Fatima', 'Ali'] },
-    { id: '3', title: 'Semi-Private', date: format(new Date(), 'yyyy-MM-dd'), start_time: '11:00', status: 'scheduled', coach_name: 'Coach Sara', player_names: ['Nour', 'Lina'] },
-    { id: '4', title: 'Private - Tariq Hasan', date: format(new Date(), 'yyyy-MM-dd'), start_time: '12:00', status: 'cancelled', coach_name: 'Coach Yusuf', player_names: ['Tariq Hasan'] },
-    { id: '5', title: 'Group Advanced', date: format(new Date(), 'yyyy-MM-dd'), start_time: '14:00', status: 'scheduled', coach_name: 'Coach Maha', player_names: ['Reem', 'Dalia', 'Hana', 'Sana'] },
-  ],
-  coachPerformance: [
-    { id: '1', full_name: 'Sara Al-Zahra', completed: 24, attendanceRate: 100, evaluations: 18 },
-    { id: '2', full_name: 'Khalid Mansour', completed: 20, attendanceRate: 95, evaluations: 15 },
-    { id: '3', full_name: 'Yusuf Ibrahim', completed: 18, attendanceRate: 94, evaluations: 12 },
-    { id: '4', full_name: 'Maha Qassim', completed: 15, attendanceRate: 98, evaluations: 14 },
-    { id: '5', full_name: 'Tariq Salem', completed: 10, attendanceRate: 90, evaluations: 8 },
-  ],
-  monthlyActivity: Array.from({ length: new Date().getDate() }, (_, i) => ({
-    day: i + 1,
-    completed: Math.floor(Math.random() * 8) + 2,
-    cancelled: Math.floor(Math.random() * 2),
-  })),
+const EMPTY_OWNER_STATS: OwnerStats = {
+  totalActiveCoaches: 0,
+  totalActivePlayers: 0,
+  todaySessions: 0,
+  completedThisMonth: 0,
+  cancelledThisMonth: 0,
+  coachAttendanceRate: 100,
+  recentSessions: [],
+  coachPerformance: [],
+  monthlyActivity: [],
 }
-
 export function useOwnerStats() {
   return useQuery<OwnerStats>({
     queryKey: ['ownerStats'],
     queryFn: async () => {
-      if (!isSupabaseConfigured()) return MOCK_OWNER_STATS
+      if (!isSupabaseConfigured()) return EMPTY_OWNER_STATS
 
       const supabase = createClient()
       const now = new Date()
@@ -182,33 +165,20 @@ export interface OpsDashboardData {
   sessionsWithoutEvaluation: Array<{ id: string; title: string; date: string }>
 }
 
-const MOCK_OPS_DATA: OpsDashboardData = {
-  todaySessionCount: 8,
-  upcomingCount: 5,
-  pendingEvaluations: 3,
-  availableCoaches: [
-    { id: '1', full_name: 'Sara Al-Zahra' },
-    { id: '3', full_name: 'Yusuf Ibrahim' },
-  ],
-  todaySessions: [
-    { id: '1', title: 'Private - Ahmed', start_time: '09:00', end_time: '10:00', status: 'completed', court_name: 'Court 1', coach_name: 'Sara Al-Zahra', player_names: ['Ahmed Al-Rashid'] },
-    { id: '2', title: 'Group Session', start_time: '10:00', end_time: '11:30', status: 'completed', court_name: 'Court 2', coach_name: 'Khalid Mansour', player_names: ['Omar', 'Fatima', 'Ali'] },
-    { id: '3', title: 'Semi-Private', start_time: '11:00', end_time: '12:00', status: 'scheduled', court_name: 'Court 3', coach_name: 'Sara Al-Zahra', player_names: ['Nour', 'Lina'] },
-    { id: '4', title: 'Private - Tariq', start_time: '14:00', end_time: '15:00', status: 'scheduled', court_name: 'Court 1', coach_name: 'Yusuf Ibrahim', player_names: ['Tariq Hasan'] },
-    { id: '5', title: 'Group Advanced', start_time: '16:00', end_time: '17:30', status: 'scheduled', court_name: 'Court 2', coach_name: 'Maha Qassim', player_names: ['Reem', 'Dalia', 'Hana'] },
-  ],
-  sessionsWithoutEvaluation: [
-    { id: '1', title: 'Private - Ahmed Al-Rashid', date: format(new Date(), 'yyyy-MM-dd') },
-    { id: '2', title: 'Group Session', date: format(new Date(), 'yyyy-MM-dd') },
-    { id: '3', title: 'Semi-Private', date: format(new Date(), 'yyyy-MM-dd') },
-  ],
+const EMPTY_OPS_DATA: OpsDashboardData = {
+  todaySessionCount: 0,
+  upcomingCount: 0,
+  pendingEvaluations: 0,
+  availableCoaches: [],
+  todaySessions: [],
+  sessionsWithoutEvaluation: [],
 }
 
 export function useOpsDashboard() {
   return useQuery<OpsDashboardData>({
     queryKey: ['opsDashboard'],
     queryFn: async () => {
-      if (!isSupabaseConfigured()) return MOCK_OPS_DATA
+      if (!isSupabaseConfigured()) return EMPTY_OPS_DATA
 
       const supabase = createClient()
       const today = format(new Date(), 'yyyy-MM-dd')
@@ -304,24 +274,13 @@ export interface CoachDashboardData {
   }
 }
 
-const MOCK_COACH_DATA: CoachDashboardData = {
-  todayCount: 4,
-  completedToday: 2,
-  pendingEvaluations: 2,
-  nextSession: {
-    id: '3',
-    title: 'Semi-Private',
-    start_time: '14:00',
-    player_names: ['Nour', 'Lina'],
-    court_name: 'Court 2',
-  },
-  todaySessions: [
-    { id: '1', title: 'Private - Ahmed', start_time: '09:00', end_time: '10:00', duration_minutes: 60, status: 'completed', court_name: 'Court 1', player_names: ['Ahmed Al-Rashid'], has_evaluation: true },
-    { id: '2', title: 'Group Beginners', start_time: '11:00', end_time: '12:30', duration_minutes: 90, status: 'completed', court_name: 'Court 2', player_names: ['Omar', 'Fatima'], has_evaluation: false },
-    { id: '3', title: 'Semi-Private', start_time: '14:00', end_time: '15:00', duration_minutes: 60, status: 'scheduled', court_name: 'Court 2', player_names: ['Nour', 'Lina'], has_evaluation: false },
-    { id: '4', title: 'Private - Reem', start_time: '16:00', end_time: '17:00', duration_minutes: 60, status: 'scheduled', court_name: 'Court 1', player_names: ['Reem Al-Sayed'], has_evaluation: false },
-  ],
-  monthSummary: { total: 28, completed: 25, cancelled: 2, hoursCoached: 37 },
+const EMPTY_COACH_DATA: CoachDashboardData = {
+  todayCount: 0,
+  completedToday: 0,
+  pendingEvaluations: 0,
+  nextSession: null,
+  todaySessions: [],
+  monthSummary: { total: 0, completed: 0, cancelled: 0, hoursCoached: 0 },
 }
 
 export function useCoachDashboard(coachId: string | undefined) {
@@ -329,7 +288,7 @@ export function useCoachDashboard(coachId: string | undefined) {
     queryKey: ['coachDashboard', coachId],
     enabled: !!coachId,
     queryFn: async () => {
-      if (!isSupabaseConfigured() || !coachId) return MOCK_COACH_DATA
+      if (!isSupabaseConfigured() || !coachId) return EMPTY_COACH_DATA
 
       const supabase = createClient()
       const now = new Date()

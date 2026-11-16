@@ -173,47 +173,57 @@ export function OwnerDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {coaches.map((c) => {
-                      const cStats = dataService.getCoachStats(c.id)
-                      return (
-                        <tr key={c.id} className="hover:bg-gray-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-bold text-[#123C35]">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-[#176B50] text-white flex items-center justify-center font-bold text-xs">
-                                {c.full_name.slice(0, 2).toUpperCase()}
+                    {coaches.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-400 text-xs">
+                          {lang === 'ar'
+                            ? 'لا يوجد مدربون مسجلون بعد. يمكنك إنشاء حساب مدرب جديد من صفحة المدربين.'
+                            : 'No coaches registered yet. Create coach accounts from the Coaches tab.'}
+                        </td>
+                      </tr>
+                    ) : (
+                      coaches.map((c) => {
+                        const cStats = dataService.getCoachStats(c.id)
+                        return (
+                          <tr key={c.id} className="hover:bg-gray-50/80 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-[#123C35]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-[#176B50] text-white flex items-center justify-center font-bold text-xs">
+                                  {c.full_name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="font-bold">{lang === 'ar' ? c.full_name_ar || c.full_name : c.full_name}</p>
+                                  <p className="text-[11px] text-gray-400 font-normal">{c.phone}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-bold">{lang === 'ar' ? c.full_name_ar || c.full_name : c.full_name}</p>
-                                <p className="text-[11px] text-gray-400 font-normal">{c.phone}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-3 text-center font-bold text-emerald-600">
-                            {cStats.completed}
-                          </td>
-                          <td className="py-3.5 px-3 text-center text-red-500 font-medium">
-                            {cStats.cancelled}
-                          </td>
-                          <td className="py-3.5 px-3 text-center">
-                            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700">
-                              {cStats.attendanceRate}%
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-3 text-center font-bold text-purple-700">
-                            {cStats.evaluationsCount} ({cStats.evaluationCompletionRate}%)
-                          </td>
-                          <td className="py-3.5 px-3 text-right">
-                            <Link
-                              href={`/dashboard/coaches/${c.id}`}
-                              className="inline-flex items-center gap-1 text-xs font-bold text-[#176B50] hover:text-[#123C35]"
-                            >
-                              {lang === 'ar' ? 'الملف' : 'Profile'}
-                              <ArrowUpRight className="w-3 h-3" />
-                            </Link>
-                          </td>
-                        </tr>
-                      )
-                    })}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-emerald-600">
+                              {cStats.completed}
+                            </td>
+                            <td className="py-3.5 px-3 text-center text-red-500 font-medium">
+                              {cStats.cancelled}
+                            </td>
+                            <td className="py-3.5 px-3 text-center">
+                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700">
+                                {cStats.attendanceRate}%
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-purple-700">
+                              {cStats.evaluationsCount} ({cStats.evaluationCompletionRate}%)
+                            </td>
+                            <td className="py-3.5 px-3 text-right">
+                              <Link
+                                href={`/dashboard/coaches/${c.id}`}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-[#176B50] hover:text-[#123C35]"
+                              >
+                                {lang === 'ar' ? 'الملف' : 'Profile'}
+                                <ArrowUpRight className="w-3 h-3" />
+                              </Link>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>

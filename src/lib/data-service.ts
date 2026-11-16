@@ -50,201 +50,21 @@ export const SEED_PROFILES: Profile[] = [
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   },
-  {
-    id: 'prof-coach-1',
-    email: 'coach.ahmed@vamospadel.com',
-    username: 'ahmed',
-    password: '1234',
-    full_name: 'Ahmed Hassan',
-    full_name_ar: 'أحمد حسن',
-    role: 'coach',
-    phone: '+20 100 555 6666',
-    avatar_url: null,
-    is_active: true,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'prof-coach-2',
-    email: 'coach.sara@vamospadel.com',
-    username: 'sara',
-    password: '1234',
-    full_name: 'Sara Mansour',
-    full_name_ar: 'سارة منصور',
-    role: 'coach',
-    phone: '+20 100 777 8888',
-    avatar_url: null,
-    is_active: true,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'prof-coach-3',
-    email: 'coach.omar@vamospadel.com',
-    username: 'omar',
-    password: '1234',
-    full_name: 'Omar Khaled',
-    full_name_ar: 'عمر خالد',
-    role: 'coach',
-    phone: '+20 100 999 0000',
-    avatar_url: null,
-    is_active: true,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
 ]
 
-export const SEED_COURTS: Court[] = [
-  {
-    id: 'court-1',
-    name: 'Court 1 (Panoramic Center)',
-    name_ar: 'ملعب 1 (بانورامي رئيسي)',
-    description: 'WPT specification championship panoramic court',
-    is_indoor: false,
-    is_active: true,
-    sort_order: 1,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'court-2',
-    name: 'Court 2 (Pro Court)',
-    name_ar: 'ملعب 2 (احترافي)',
-    description: 'High performance turf with LED tournament lighting',
-    is_indoor: false,
-    is_active: true,
-    sort_order: 2,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'court-3',
-    name: 'Court 3 (Academy Standard)',
-    name_ar: 'ملعب 3 (معياري للأكاديمية)',
-    description: 'Designed for academy coaching and match drills',
-    is_indoor: true,
-    is_active: true,
-    sort_order: 3,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'court-4',
-    name: 'Court 4 (Training)',
-    name_ar: 'ملعب 4 (تدريب مخصص)',
-    description: 'Focused training court with ball machine support',
-    is_indoor: true,
-    is_active: true,
-    sort_order: 4,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z',
-  },
-]
+export const SEED_COURTS: Court[] = Array.from({ length: 12 }, (_, i) => ({
+  id: `court-${i + 1}`,
+  name: `Court ${i + 1}`,
+  name_ar: `ملعب ${i + 1}`,
+  description: `Court ${i + 1}`,
+  is_indoor: false,
+  is_active: true,
+  sort_order: i + 1,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+}))
 
-export const SEED_PLAYERS: Player[] = [
-  {
-    id: 'player-1',
-    full_name: 'Ziad Al-Ghamdi',
-    full_name_ar: 'زياد الغامدي',
-    email: 'ziad.g@example.com',
-    phone: '+20 101 234 5678',
-    date_of_birth: '1995-04-12',
-    level: 'intermediate',
-    notes: 'Strong forehand drive, working on back wall rebounds and bandeja placement.',
-    emergency_contact_name: 'Mona Al-Ghamdi',
-    emergency_contact_phone: '+20 101 234 5679',
-    is_active: true,
-    avatar_url: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-01-10T10:00:00Z',
-    updated_at: '2026-01-10T10:00:00Z',
-  },
-  {
-    id: 'player-2',
-    full_name: 'Farida Nour',
-    full_name_ar: 'فريدة نور',
-    email: 'farida.nour@example.com',
-    phone: '+20 102 345 6789',
-    date_of_birth: '1998-08-22',
-    level: 'intermediate_advanced',
-    notes: 'Excellent net reflexes and high court coverage. Preparing for regional tournament.',
-    emergency_contact_name: 'Hassan Nour',
-    emergency_contact_phone: '+20 102 345 6780',
-    is_active: true,
-    avatar_url: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-01-12T11:00:00Z',
-    updated_at: '2026-01-12T11:00:00Z',
-  },
-  {
-    id: 'player-3',
-    full_name: 'Mostafa Kamel',
-    full_name_ar: 'مصطفى كامل',
-    email: 'mostafa.k@example.com',
-    phone: '+20 103 456 7890',
-    date_of_birth: '1992-11-05',
-    level: 'beginner',
-    notes: 'New to racket sports. Focus on basic grip, footwork and contact point.',
-    emergency_contact_name: 'Nadia Kamel',
-    emergency_contact_phone: '+20 103 456 7891',
-    is_active: true,
-    avatar_url: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-02-01T09:00:00Z',
-    updated_at: '2026-02-01T09:00:00Z',
-  },
-  {
-    id: 'player-4',
-    full_name: 'Layla El-Sayed',
-    full_name_ar: 'ليلى السيد',
-    email: 'layla.s@example.com',
-    phone: '+20 104 567 8901',
-    date_of_birth: '2001-03-15',
-    level: 'advanced',
-    notes: 'Power player with potent víbora and smash. Developing tactical patience.',
-    emergency_contact_name: 'Amr El-Sayed',
-    emergency_contact_phone: '+20 104 567 8902',
-    is_active: true,
-    avatar_url: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-01-15T14:00:00Z',
-    updated_at: '2026-01-15T14:00:00Z',
-  },
-  {
-    id: 'player-5',
-    full_name: 'Sherif Fawzy',
-    full_name_ar: 'شريف فوزي',
-    email: 'sherif.f@example.com',
-    phone: '+20 105 678 9012',
-    date_of_birth: '1989-07-30',
-    level: 'competitive',
-    notes: 'Academy team captain. Top tier communication, defensive positioning, and clutch play.',
-    emergency_contact_name: 'Dina Fawzy',
-    emergency_contact_phone: '+20 105 678 9013',
-    is_active: true,
-    avatar_url: null,
-    created_by: 'prof-owner-1',
-    created_at: '2026-01-05T08:00:00Z',
-    updated_at: '2026-01-05T08:00:00Z',
-  },
-  {
-    id: 'player-6',
-    full_name: 'Youssef Sabry',
-    full_name_ar: 'يوسف صبري',
-    email: 'youssef.s@example.com',
-    phone: '+20 106 789 0123',
-    date_of_birth: '1996-09-18',
-    level: 'beginner_intermediate',
-    notes: 'Consistent attendance. Working on transition from defense to net.',
-    emergency_contact_name: 'Maged Sabry',
-    emergency_contact_phone: '+20 106 789 0124',
-    is_active: true,
-    avatar_url: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-02-10T16:00:00Z',
-    updated_at: '2026-02-10T16:00:00Z',
-  },
-]
+export const SEED_PLAYERS: Player[] = []
 
 // Today's date in YYYY-MM-DD format (Cairo local)
 export function getTodayDateStr(): string {
@@ -252,260 +72,21 @@ export function getTodayDateStr(): string {
   return now.toISOString().split('T')[0]
 }
 
-export const SEED_SESSIONS: Session[] = [
-  {
-    id: 'sess-today-1',
-    title: 'Private Padel Session - Ziad Al-Ghamdi',
-    title_ar: 'جلسة بادل خاصة - زياد الغامدي',
-    session_type: 'private',
-    status: 'scheduled',
-    court_id: 'court-1',
-    coach_id: 'prof-coach-1',
-    date: getTodayDateStr(),
-    start_time: '17:00',
-    end_time: '18:00',
-    duration_minutes: 60,
-    max_players: 1,
-    current_players: 1,
-    price_per_player: 450,
-    notes: 'Focus on defensive wall rebound and bandeja depth.',
-    notes_ar: 'التركيز على ارتداد الجدار الدفاعي وعمق البانديخا.',
-    is_recurring: false,
-    recurrence_rule: null,
-    parent_session_id: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-11-15T09:00:00Z',
-    updated_at: '2026-11-15T09:00:00Z',
-  },
-  {
-    id: 'sess-today-2',
-    title: 'Semi-Private Tactical Clinic',
-    title_ar: 'عيادة تكتيكية شبه خاصة',
-    session_type: 'semi_private',
-    status: 'confirmed',
-    court_id: 'court-2',
-    coach_id: 'prof-coach-2',
-    date: getTodayDateStr(),
-    start_time: '18:00',
-    end_time: '19:30',
-    duration_minutes: 90,
-    max_players: 2,
-    current_players: 2,
-    price_per_player: 350,
-    notes: 'Net coordination, cross-court chiquita drills, and partner communication.',
-    notes_ar: 'التنسيق عند الشبكة، تمارين الشيكيتا عبر الملعب، والتواصل مع الشريك.',
-    is_recurring: false,
-    recurrence_rule: null,
-    parent_session_id: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-11-15T10:00:00Z',
-    updated_at: '2026-11-15T10:00:00Z',
-  },
-  {
-    id: 'sess-today-3',
-    title: 'Group Assessment & Match Play',
-    title_ar: 'تقييم جماعي ولعب تنافسي',
-    session_type: 'group',
-    status: 'scheduled',
-    court_id: 'court-3',
-    coach_id: 'prof-coach-3',
-    date: getTodayDateStr(),
-    start_time: '19:00',
-    end_time: '20:30',
-    duration_minutes: 90,
-    max_players: 4,
-    current_players: 4,
-    price_per_player: 250,
-    notes: '4-player group evaluation. Independent grading for each player.',
-    notes_ar: 'تقييم مجموعة من 4 لاعبين مع تقييم منفصل لكل لاعب.',
-    is_recurring: false,
-    recurrence_rule: null,
-    parent_session_id: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-11-15T11:00:00Z',
-    updated_at: '2026-11-15T11:00:00Z',
-  },
-  {
-    id: 'sess-past-1',
-    title: 'Completed Private Coaching - Farida Nour',
-    title_ar: 'جلسة تدريب مكتملة - فريدة نور',
-    session_type: 'private',
-    status: 'completed',
-    court_id: 'court-1',
-    coach_id: 'prof-coach-1',
-    date: '2026-11-10',
-    start_time: '16:00',
-    end_time: '17:00',
-    duration_minutes: 60,
-    max_players: 1,
-    current_players: 1,
-    price_per_player: 450,
-    notes: 'Completed session with evaluation submitted.',
-    notes_ar: 'جلسة مكتملة مع تقديم التقييم الفني.',
-    is_recurring: false,
-    recurrence_rule: null,
-    parent_session_id: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-11-09T08:00:00Z',
-    updated_at: '2026-11-10T17:05:00Z',
-  },
-  {
-    id: 'sess-past-2',
-    title: 'Cancelled Private Session - Mostafa Kamel',
-    title_ar: 'جلسة ملغاة - مصطفى كامل',
-    session_type: 'private',
-    status: 'cancelled',
-    court_id: 'court-2',
-    coach_id: 'prof-coach-1',
-    date: '2026-11-12',
-    start_time: '15:00',
-    end_time: '16:00',
-    duration_minutes: 60,
-    max_players: 1,
-    current_players: 1,
-    price_per_player: 450,
-    notes: 'Player requested cancellation 24h prior due to work emergency.',
-    notes_ar: 'طلب اللاعب الإلغاء قبل 24 ساعة لظرف طارئ.',
-    is_recurring: false,
-    recurrence_rule: null,
-    parent_session_id: null,
-    created_by: 'prof-ops-1',
-    created_at: '2026-11-11T09:00:00Z',
-    updated_at: '2026-11-11T14:00:00Z',
-  },
-]
+export const SEED_SESSIONS: Session[] = []
 
-export const SEED_SESSION_PLAYERS: SessionPlayer[] = [
-  {
-    id: 'sp-1',
-    session_id: 'sess-today-1',
-    player_id: 'player-1',
-    status: 'registered',
-    registered_at: '2026-11-15T09:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-2',
-    session_id: 'sess-today-2',
-    player_id: 'player-2',
-    status: 'confirmed',
-    registered_at: '2026-11-15T10:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-3',
-    session_id: 'sess-today-2',
-    player_id: 'player-4',
-    status: 'confirmed',
-    registered_at: '2026-11-15T10:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-4',
-    session_id: 'sess-today-3',
-    player_id: 'player-1',
-    status: 'registered',
-    registered_at: '2026-11-15T11:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-5',
-    session_id: 'sess-today-3',
-    player_id: 'player-3',
-    status: 'registered',
-    registered_at: '2026-11-15T11:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-6',
-    session_id: 'sess-today-3',
-    player_id: 'player-5',
-    status: 'registered',
-    registered_at: '2026-11-15T11:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-7',
-    session_id: 'sess-today-3',
-    player_id: 'player-6',
-    status: 'registered',
-    registered_at: '2026-11-15T11:00:00Z',
-    notes: null,
-    registered_by: 'prof-ops-1',
-  },
-  {
-    id: 'sp-8',
-    session_id: 'sess-past-1',
-    player_id: 'player-2',
-    status: 'attended',
-    registered_at: '2026-11-09T08:00:00Z',
-    notes: 'Attended and completed',
-    registered_by: 'prof-ops-1',
-  },
-]
+export const SEED_SESSION_PLAYERS: SessionPlayer[] = []
 
-export const SEED_EVALUATIONS: Evaluation[] = [
-  {
-    id: 'eval-1',
-    player_id: 'player-2',
-    coach_id: 'prof-coach-1',
-    session_id: 'sess-past-1',
-    evaluation_date: '2026-11-10',
-    overall_rating: 4,
-    notes: 'Superb footwork and fast net coverage. Bandeja depth improved significantly. Next session: focus on defensive lob under pressure.',
-    notes_ar: 'أداء ممتاز في حركة القدمين والتغطية عند الشبكة. تحسن ملحوظ في عمق البانديخا. الجلسة القادمة: التركيز على اللوب الدفاعي تحت الضغط.',
-    created_at: '2026-11-10T17:15:00Z',
-    updated_at: '2026-11-10T17:15:00Z',
-  },
-]
+export const SEED_EVALUATIONS: Evaluation[] = []
 
-export const SEED_SKILL_SCORES: EvaluationSkillScore[] = [
-  { id: 'ss-1', evaluation_id: 'eval-1', skill_key: 'forehand_drive', score: 4, notes: 'Crisp and reliable flat drive' },
-  { id: 'ss-2', evaluation_id: 'eval-1', skill_key: 'backhand_drive', score: 3, notes: 'Solid, needs more slice extension' },
-  { id: 'ss-3', evaluation_id: 'eval-1', skill_key: 'bandeja', score: 4, notes: 'Clean overhead contact with good spin' },
-  { id: 'ss-4', evaluation_id: 'eval-1', skill_key: 'vibora', score: 4, notes: 'Aggressive side wall curve' },
-  { id: 'ss-5', evaluation_id: 'eval-1', skill_key: 'net_positioning', score: 5, notes: 'Flawless positioning and reaction' },
-  { id: 'ss-6', evaluation_id: 'eval-1', skill_key: 'speed', score: 5, notes: 'Top percentile academy pace' },
-  { id: 'ss-7', evaluation_id: 'eval-1', skill_key: 'focus', score: 4, notes: 'High concentration throughout match' },
-]
+export const SEED_SKILL_SCORES: EvaluationSkillScore[] = []
 
-export const SEED_COACH_ATTENDANCE: CoachAttendance[] = [
-  {
-    id: 'ca-1',
-    session_id: 'sess-past-1',
-    coach_id: 'prof-coach-1',
-    status: 'attended',
-    replacement_coach_id: null,
-    check_in_time: '2026-11-10T15:45:00Z',
-    check_out_time: '2026-11-10T17:15:00Z',
-    notes: 'Prompt check-in, completed full session and evaluation.',
-    marked_by: 'prof-coach-1',
-    marked_at: '2026-11-10T15:45:00Z',
-  },
-]
+export const SEED_COACH_ATTENDANCE: CoachAttendance[] = []
 
-export const SEED_SCHEDULE_LOGS: ScheduleChangeLog[] = [
-  {
-    id: 'log-1',
-    session_id: 'sess-today-1',
-    changed_by: 'prof-ops-1',
-    change_type: 'created',
-    old_values: null,
-    new_values: { time: '17:00-18:00', court: 'Court 1', coach: 'Ahmed Hassan' },
-    reason: 'Initial session booking',
-    created_at: '2026-11-15T09:00:00Z',
-  },
-]
+export const SEED_SCHEDULE_LOGS: ScheduleChangeLog[] = []
 
 // ─── Local State Management with LocalStorage ────────────────────────────────
 
-const STORAGE_KEY = 'vamos_academy_state_v4'
+const STORAGE_KEY = 'vamos_academy_clean_v8'
 
 interface AcademyState {
   profiles: Profile[]
@@ -710,6 +291,9 @@ export const dataService = {
 
   // Courts
   getCourts: (): Court[] => memoryState.courts.filter((c) => c.is_active),
+  getCourtById: (id: string): Court | undefined => memoryState.courts.find((c) => c.id === id),
+  getSessionPlayers: (sessionId: string): SessionPlayer[] =>
+    memoryState.sessionPlayers.filter((sp) => sp.session_id === sessionId),
 
   // Players
   getPlayers: (filter?: { search?: string; level?: PlayerLevel; isActive?: boolean }): Player[] => {
@@ -1254,5 +838,105 @@ export const dataService = {
       evaluationCompletionRate: Math.min(evalRate, 100),
       attendanceRate: 98,
     }
+  },
+
+  // Monthly Coach Sessions Breakdown (For Admin & Operations)
+  getAvailableMonths: (): string[] => {
+    const currentMonth = getTodayDateStr().slice(0, 7)
+    const set = new Set<string>([currentMonth])
+    memoryState.sessions.forEach((s) => {
+      if (s.date) set.add(s.date.slice(0, 7))
+    })
+    return Array.from(set).sort().reverse()
+  },
+
+  getMonthlyCoachSessions: (filter?: { yearMonth?: string; coachId?: string }) => {
+    let sessions = memoryState.sessions
+
+    if (filter?.coachId) {
+      sessions = sessions.filter((s) => s.coach_id === filter.coachId)
+    }
+
+    if (filter?.yearMonth && filter.yearMonth !== 'all') {
+      sessions = sessions.filter((s) => s.date.startsWith(filter.yearMonth!))
+    }
+
+    const coaches = memoryState.profiles.filter((p) => p.role === 'coach')
+    const currentMonth = getTodayDateStr().slice(0, 7)
+    const distinctMonths = filter?.yearMonth && filter.yearMonth !== 'all'
+      ? [filter.yearMonth]
+      : Array.from(new Set([currentMonth, ...memoryState.sessions.map((s) => s.date.slice(0, 7))])).sort().reverse()
+
+    const groups: { [key: string]: {
+      yearMonth: string
+      coachId: string
+      coachName: string
+      coachNameAr: string
+      coachUsername: string
+      totalSessions: number
+      completedSessions: number
+      cancelledSessions: number
+      scheduledSessions: number
+      totalHours: number
+      sessions: Session[]
+    } } = {}
+
+    // Initialize all coaches for each month
+    distinctMonths.forEach((ym) => {
+      coaches.forEach((c) => {
+        if (filter?.coachId && c.id !== filter.coachId) return
+        const key = `${ym}_${c.id}`
+        groups[key] = {
+          yearMonth: ym,
+          coachId: c.id,
+          coachName: c.full_name,
+          coachNameAr: c.full_name_ar || c.full_name,
+          coachUsername: c.username || 'coach',
+          totalSessions: 0,
+          completedSessions: 0,
+          cancelledSessions: 0,
+          scheduledSessions: 0,
+          totalHours: 0,
+          sessions: [],
+        }
+      })
+    })
+
+    // Aggregate sessions
+    sessions.forEach((s) => {
+      const ym = s.date.slice(0, 7)
+      const key = `${ym}_${s.coach_id}`
+      const coach = memoryState.profiles.find((p) => p.id === s.coach_id)
+
+      if (!groups[key]) {
+        groups[key] = {
+          yearMonth: ym,
+          coachId: s.coach_id,
+          coachName: coach?.full_name || 'Coach',
+          coachNameAr: coach?.full_name_ar || coach?.full_name || 'مدرب',
+          coachUsername: coach?.username || 'coach',
+          totalSessions: 0,
+          completedSessions: 0,
+          cancelledSessions: 0,
+          scheduledSessions: 0,
+          totalHours: 0,
+          sessions: [],
+        }
+      }
+
+      groups[key].totalSessions += 1
+      groups[key].sessions.push(s)
+      groups[key].totalHours += Number(((s.duration_minutes || 60) / 60).toFixed(1))
+
+      if (s.status === 'completed') {
+        groups[key].completedSessions += 1
+      } else if (s.status === 'cancelled') {
+        groups[key].cancelledSessions += 1
+      } else if (s.status === 'scheduled' || s.status === 'confirmed') {
+        groups[key].scheduledSessions += 1
+      }
+    })
+
+    return Object.values(groups).sort((a, b) => b.yearMonth.localeCompare(a.yearMonth) || a.coachName.localeCompare(b.coachName))
   },
 }

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Globe,
   UserCheck,
+  CalendarDays,
 } from 'lucide-react'
 import { dataService } from '@/lib/data-service'
 import { translations, Locale } from '@/lib/i18n'
@@ -65,6 +66,11 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
     navItems.push(
       { label: t.navOverview, href: '/dashboard', icon: LayoutDashboard },
       { label: t.navSchedule, href: '/dashboard/schedule', icon: Calendar },
+      {
+        label: lang === 'ar' ? 'جلسات المدربين الشهرية' : 'Monthly Coach Sessions',
+        href: '/dashboard/monthly-sessions',
+        icon: CalendarDays,
+      },
       { label: t.navCoaches, href: '/dashboard/coaches', icon: UserCheck },
       { label: t.navPlayers, href: '/dashboard/players', icon: Users },
       { label: t.navEvaluations, href: '/dashboard/evaluations', icon: Award },
@@ -76,6 +82,11 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
     navItems.push(
       { label: t.navOverview, href: '/dashboard', icon: LayoutDashboard },
       { label: t.navSchedule, href: '/dashboard/schedule', icon: Calendar },
+      {
+        label: lang === 'ar' ? 'جلسات المدربين الشهرية' : 'Monthly Coach Sessions',
+        href: '/dashboard/monthly-sessions',
+        icon: CalendarDays,
+      },
       { label: t.navPlayers, href: '/dashboard/players', icon: Users },
       { label: t.navCoaches, href: '/dashboard/coaches', icon: UserCheck },
       { label: t.navAttendance, href: '/dashboard/attendance', icon: CheckCircle2 }
@@ -107,14 +118,14 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
 
   return (
     <aside className="w-64 bg-[#0F222D] text-white flex flex-col h-full select-none border-r border-[#1B3B4B]">
-      {/* Brand Header with Official VAMOS Logo */}
+      {/* Brand Header with Zoomed White-Circle Official VAMOS Logo */}
       <div className="p-5 border-b border-[#1B3B4B]/80 bg-[#162E3B]/60">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-11 h-11 rounded-full bg-white p-0.5 shadow-md flex items-center justify-center shrink-0 ring-2 ring-[#4D97B8]/40 transition-transform group-hover:scale-105">
+          <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-[#4D97B8]/40 transition-transform group-hover:scale-105">
             <img
               src="/logo.png"
               alt="VAMOS Logo"
-              className="w-full h-full object-contain rounded-full"
+              className="w-full h-full object-cover scale-105 rounded-full"
             />
           </div>
           <div className="overflow-hidden">
@@ -129,7 +140,7 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
         </Link>
       </div>
 
-      {/* Role Pill Banner (Visual indicator of current role, NOT a switcher) */}
+      {/* Role Pill Banner */}
       <div className="px-4 py-2.5 bg-[#122733] border-b border-[#1B3B4B]/60 flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-wider font-bold text-white/50">
           {lang === 'ar' ? 'البوابة الحالية' : 'Current Portal'}
