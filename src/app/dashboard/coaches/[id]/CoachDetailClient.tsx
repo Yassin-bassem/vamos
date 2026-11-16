@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   UserCheck,
   Calendar,
@@ -26,8 +26,13 @@ import Link from 'next/link'
 
 export default function CoachDetailPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
-  const coachId = params.id as string
+
+  const [coachId, setCoachId] = useState<string>(() => {
+    if (params?.id && params.id !== 'default') return params.id as string
+    return ''
+  })
 
   const [lang, setLang] = useState<Locale>('en')
   const [coach, setCoach] = useState<Profile | undefined>(undefined)
@@ -36,6 +41,23 @@ export default function CoachDetailPage() {
   const [evaluations, setEvaluations] = useState<any[]>([])
 
   useEffect(() => {
+    let cid = ''
+    if (searchParams?.get('id')) {
+      cid = searchParams.get('id')!
+    } else if (params?.id && params.id !== 'default') {
+      cid = params.id as string
+    } else if (typeof window !== 'undefined') {
+      const parts = window.location.pathname.split('/').filter(Boolean)
+      const last = parts[parts.length - 1]
+      if (last && last !== 'view' && last !== 'default') {
+        cid = last
+      }
+    }
+    if (cid) setCoachId(cid)
+  }, [params, searchParams])
+
+  useEffect(() => {
+    if (!coachId) return
     setLang(dataService.getLanguage())
     const c = dataService.getCoachById(coachId)
     setCoach(c)
@@ -47,11 +69,15 @@ export default function CoachDetailPage() {
     const allEvals = dataService.getState().evaluations.filter((e) => e.coach_id === coachId)
     setEvaluations(allEvals)
 
+    // Sync with Supabase in case this coach was just added from another device
+    dataService.syncWithSupabase()
+
     const handleUpdate = () => {
       setLang(dataService.getLanguage())
       setCoach(dataService.getCoachById(coachId))
       setStats(dataService.getCoachStats(coachId))
       setSessions(dataService.getSessions({ coachId }))
+      setEvaluations(dataService.getState().evaluations.filter((e) => e.coach_id === coachId))
     }
     window.addEventListener('vamos_state_updated', handleUpdate)
     return () => window.removeEventListener('vamos_state_updated', handleUpdate)

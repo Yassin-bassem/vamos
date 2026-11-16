@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   User,
   Phone,
@@ -28,8 +28,13 @@ import Link from 'next/link'
 
 export default function PlayerProfilePage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
-  const playerId = params.id as string
+
+  const [playerId, setPlayerId] = useState<string>(() => {
+    if (params?.id && params.id !== 'default') return params.id as string
+    return ''
+  })
 
   const [lang, setLang] = useState<Locale>('en')
   const [player, setPlayer] = useState<Player | undefined>(undefined)
@@ -37,6 +42,23 @@ export default function PlayerProfilePage() {
   const [sessions, setSessions] = useState<Session[]>([])
 
   useEffect(() => {
+    let pid = ''
+    if (searchParams?.get('id')) {
+      pid = searchParams.get('id')!
+    } else if (params?.id && params.id !== 'default') {
+      pid = params.id as string
+    } else if (typeof window !== 'undefined') {
+      const parts = window.location.pathname.split('/').filter(Boolean)
+      const last = parts[parts.length - 1]
+      if (last && last !== 'view' && last !== 'default') {
+        pid = last
+      }
+    }
+    if (pid) setPlayerId(pid)
+  }, [params, searchParams])
+
+  useEffect(() => {
+    if (!playerId) return
     setLang(dataService.getLanguage())
     const pl = dataService.getPlayerById(playerId)
     setPlayer(pl)
@@ -49,10 +71,16 @@ export default function PlayerProfilePage() {
     )
     setSessions(playerSess)
 
+    dataService.syncWithSupabase()
+
     const handleUpdate = () => {
       setLang(dataService.getLanguage())
       setPlayer(dataService.getPlayerById(playerId))
       setEvaluations(dataService.getEvaluationsForPlayer(playerId))
+      const freshSess = dataService.getSessions().filter((s) =>
+        s.session_players?.some((sp) => sp.player_id === playerId)
+      )
+      setSessions(freshSess)
     }
     window.addEventListener('vamos_state_updated', handleUpdate)
     return () => window.removeEventListener('vamos_state_updated', handleUpdate)

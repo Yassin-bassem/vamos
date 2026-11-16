@@ -212,7 +212,7 @@ export default function CoachesPage() {
                 {/* Profile Link */}
                 <div className="pt-2 border-t border-gray-100 flex justify-end">
                   <Link
-                    href={`/dashboard/coaches/${c.id}`}
+                    href={`/dashboard/coaches/view?id=${c.id}`}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4D97B8] hover:text-[#3D85A5] hover:underline"
                   >
                     <span>{lang === 'ar' ? 'عرض السجل التدريبي الكامل' : 'View Performance Profile'}</span>

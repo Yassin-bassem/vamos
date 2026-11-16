@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   Award,
   Star,
@@ -24,12 +24,35 @@ import { toast } from 'sonner'
 
 export default function EvaluateSessionPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
-  const sessionId = params.sessionId as string
+
+  const [sessionId, setSessionId] = useState<string>(() => {
+    if (params?.sessionId && params.sessionId !== 'default') return params.sessionId as string
+    return ''
+  })
 
   const [lang, setLang] = useState<Locale>('en')
   const [session, setSession] = useState<Session | undefined>(undefined)
   const [activePlayerIndex, setActivePlayerIndex] = useState(0)
+
+  useEffect(() => {
+    let sid = ''
+    if (searchParams?.get('id')) {
+      sid = searchParams.get('id')!
+    } else if (searchParams?.get('sessionId')) {
+      sid = searchParams.get('sessionId')!
+    } else if (params?.sessionId && params.sessionId !== 'default') {
+      sid = params.sessionId as string
+    } else if (typeof window !== 'undefined') {
+      const parts = window.location.pathname.split('/').filter(Boolean)
+      const evaluateIdx = parts.indexOf('evaluate')
+      if (evaluateIdx > 0 && parts[evaluateIdx - 1] !== 'schedule') {
+        sid = parts[evaluateIdx - 1]
+      }
+    }
+    if (sid) setSessionId(sid)
+  }, [params, searchParams])
 
   // Skill scores state: skillKey -> rating (1-5)
   const [skillRatings, setSkillRatings] = useState<Record<string, number>>({})
@@ -42,9 +65,12 @@ export default function EvaluateSessionPage() {
   const [activeCategory, setActiveCategory] = useState<'technical' | 'tactical' | 'physical' | 'mental'>('technical')
 
   useEffect(() => {
+    if (!sessionId) return
     setLang(dataService.getLanguage())
     const sess = dataService.getSessionById(sessionId)
     setSession(sess)
+
+    dataService.syncWithSupabase()
 
     // Pre-populate default 3 for skills
     const initial: Record<string, number> = {}

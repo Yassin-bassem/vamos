@@ -113,7 +113,7 @@ export default function EvaluationsPage() {
 
                     {ev.player && (
                       <Link
-                        href={`/dashboard/players/${ev.player.id}`}
+                        href={`/dashboard/players/view?id=${ev.player.id}`}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-[#176B50] hover:bg-gray-100 transition-colors"
                       >
                         <ArrowRight className="w-4 h-4" />

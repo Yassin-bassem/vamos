@@ -243,13 +243,76 @@ export async function syncFromSupabase() {
       memoryState.players = supaPlayers
     }
 
-    // 4. Sync Sessions
+    // 4. Sync Session Players
+    const { data: supaSessionPlayers } = await supabase.from('session_players').select('*')
+    if (supaSessionPlayers) {
+      memoryState.sessionPlayers = supaSessionPlayers.map((sp: any) => ({
+        id: sp.id,
+        session_id: sp.session_id,
+        player_id: sp.player_id,
+        status: sp.status || 'registered',
+        registered_at: sp.created_at || new Date().toISOString(),
+        notes: sp.notes || null,
+        registered_by: sp.registered_by || 'system',
+      }))
+    }
+
+    // 5. Sync Sessions
     const { data: supaSessions } = await supabase.from('sessions').select('*')
     if (supaSessions) {
-      memoryState.sessions = supaSessions.map((s: any) => ({
-        ...s,
-        date: s.start_time ? s.start_time.split('T')[0] : (s.date || getTodayDateStr()),
-      }))
+      memoryState.sessions = supaSessions.map((s: any) => {
+        let startTime = s.start_time
+        let endTime = s.end_time
+        if (typeof startTime === 'string' && startTime.includes('T')) {
+          startTime = startTime.split('T')[1].slice(0, 5)
+        }
+        if (typeof endTime === 'string' && endTime.includes('T')) {
+          endTime = endTime.split('T')[1].slice(0, 5)
+        }
+        const dateStr =
+          s.start_time && typeof s.start_time === 'string' && s.start_time.includes('T')
+            ? s.start_time.split('T')[0]
+            : s.date || getTodayDateStr()
+
+        const sessionPlayers = (memoryState.sessionPlayers || [])
+          .filter((sp) => sp.session_id === s.id)
+          .map((sp) => ({
+            ...sp,
+            player: (memoryState.players || []).find((pl) => pl.id === sp.player_id),
+          }))
+
+        return {
+          id: s.id,
+          title: s.title || `${(s.session_type || 'private').replace('_', ' ').toUpperCase()} Session`,
+          title_ar: s.title_ar || `جلسة ${s.session_type || 'خاصة'}`,
+          session_type: s.session_type || 'private',
+          status: s.status || 'scheduled',
+          court_id: s.court_id,
+          coach_id: s.coach_id,
+          date: dateStr,
+          start_time: startTime || '18:00',
+          end_time: endTime || '19:00',
+          duration_minutes: s.duration_minutes || 60,
+          max_players: s.max_players || 4,
+          current_players: sessionPlayers.length,
+          price_per_player: s.price_per_player || 400,
+          notes: s.notes || null,
+          notes_ar: s.notes_ar || null,
+          is_recurring: false,
+          recurrence_rule: null,
+          parent_session_id: null,
+          created_by: s.created_by || 'system',
+          created_at: s.created_at || new Date().toISOString(),
+          updated_at: s.updated_at || new Date().toISOString(),
+          session_players: sessionPlayers,
+        }
+      })
+    }
+
+    // 6. Sync Evaluations
+    const { data: supaEvaluations } = await supabase.from('evaluations').select('*')
+    if (supaEvaluations) {
+      memoryState.evaluations = supaEvaluations
     }
 
     persistState(memoryState)
@@ -260,11 +323,22 @@ export async function syncFromSupabase() {
   }
 }
 
-// Auto-trigger sync on browser mount
+// Auto-trigger sync on browser mount & periodic real-time polling
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     syncFromSupabase()
   }, 100)
+  setInterval(() => {
+    syncFromSupabase()
+  }, 3500)
+  window.addEventListener('focus', () => {
+    syncFromSupabase()
+  })
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      syncFromSupabase()
+    }
+  })
 }
 
 // ─── Public Data Service API ──────────────────────────────────────────────────
@@ -769,6 +843,48 @@ export const dataService = {
       created_at: new Date().toISOString(),
     }
 
+    // 1. Insert into Supabase
+    try {
+      const supabase = getSupabase()
+      if (supabase) {
+        const startIso = `${params.date}T${params.startTime}:00Z`
+        const endIso = `${params.date}T${endTime}:00Z`
+        supabase
+          .from('sessions')
+          .insert([
+            {
+              id: newSessionId,
+              coach_id: params.coachId,
+              court_id: params.courtId,
+              session_type: params.sessionType,
+              status: 'scheduled',
+              start_time: startIso,
+              end_time: endIso,
+              duration_minutes: params.durationMinutes,
+              notes: params.notes || null,
+            },
+          ])
+          .then(({ error }) => {
+            if (error) console.error('Supabase insert session error:', error.message)
+          })
+
+        if (params.playerIds && params.playerIds.length > 0) {
+          const spRows = params.playerIds.map((pid) => ({
+            session_id: newSessionId,
+            player_id: pid,
+          }))
+          supabase
+            .from('session_players')
+            .insert(spRows)
+            .then(({ error }) => {
+              if (error) console.error('Supabase insert session_players error:', error.message)
+            })
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase session insert skipped:', e)
+    }
+
     persistState({
       ...memoryState,
       sessions: [newSession, ...memoryState.sessions],
@@ -806,6 +922,28 @@ export const dataService = {
     const endH = Math.floor(endMinutes / 60)
     const endM = endMinutes % 60
     const newEndTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
+
+    // Update in Supabase
+    try {
+      const supabase = getSupabase()
+      if (supabase) {
+        const payload: any = {}
+        if (updates.status) payload.status = updates.status
+        if (updates.cancellationReason) payload.cancellation_reason = updates.cancellationReason
+        if (updates.date || updates.startTime || updates.durationMinutes) {
+          payload.start_time = `${newDate}T${newStartTime}:00Z`
+          payload.end_time = `${newDate}T${newEndTime}:00Z`
+          payload.duration_minutes = newDuration
+        }
+        if (updates.coachId) payload.coach_id = updates.coachId
+        if (updates.courtId) payload.court_id = updates.courtId
+        supabase.from('sessions').update(payload).eq('id', sessionId).then(({ error }) => {
+          if (error) console.error('Supabase update session error:', error.message)
+        })
+      }
+    } catch (e) {
+      console.warn('Supabase update session skipped:', e)
+    }
 
     // check conflicts if time, date, coach, or court changed
     if (
@@ -910,7 +1048,10 @@ export const dataService = {
     notes?: string
     notes_ar?: string
   }): Evaluation => {
-    const evalId = `eval-${Date.now()}`
+    const evalId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : '00000000-0000-4000-8000-' + Date.now().toString().padStart(12, '0')
     const newEval: Evaluation = {
       id: evalId,
       player_id: params.playerId,
@@ -933,6 +1074,38 @@ export const dataService = {
         notes: null,
       })
     )
+
+    // Update in Supabase
+    try {
+      const supabase = getSupabase()
+      if (supabase) {
+        supabase
+          .from('evaluations')
+          .insert([
+            {
+              id: evalId,
+              player_id: params.playerId,
+              coach_id: params.coachId,
+              session_id: params.sessionId,
+              overall_rating: params.overallRating,
+              notes: params.notes || null,
+            },
+          ])
+          .then(({ error }) => {
+            if (error) console.error('Supabase evaluation insert error:', error.message)
+          })
+
+        supabase
+          .from('sessions')
+          .update({ status: 'completed' })
+          .eq('id', params.sessionId)
+          .then(({ error }) => {
+            if (error) console.error('Supabase complete session error:', error.message)
+          })
+      }
+    } catch (e) {
+      console.warn('Supabase evaluation skipped:', e)
+    }
 
     // Mark session as completed and player attendance as attended
     const updatedSessions = memoryState.sessions.map((s) => {

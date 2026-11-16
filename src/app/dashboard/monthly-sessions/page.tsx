@@ -432,7 +432,7 @@ export default function MonthlySessionsPage() {
                         {/* View in Schedule Button */}
                         <div className="flex items-center justify-end shrink-0">
                           <Link
-                            href={`/dashboard/schedule/${sess.id}`}
+                            href={`/dashboard/schedule/view?id=${sess.id}`}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-white hover:border-[#4D97B8] transition-all"
                           >
                             <span>{lang === 'ar' ? 'عرض بالجدول' : 'View Session'}</span>

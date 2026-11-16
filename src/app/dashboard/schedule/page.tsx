@@ -447,7 +447,7 @@ export default function SchedulePage() {
                 {/* Card Actions */}
                 <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                   <Link
-                    href={`/dashboard/schedule/${sess.id}`}
+                    href={`/dashboard/schedule/view?id=${sess.id}`}
                     className="text-xs font-bold text-gray-600 hover:text-[#123C35]"
                   >
                     {t.details}
@@ -476,7 +476,7 @@ export default function SchedulePage() {
 
                     {role === 'coach' && sess.status !== 'cancelled' && (
                       <Link
-                        href={`/dashboard/schedule/${sess.id}/evaluate`}
+                        href={`/dashboard/schedule/evaluate?id=${sess.id}`}
                         className="px-3 py-1 text-xs font-bold rounded-lg bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] transition-all"
                       >
                         {sess.status === 'completed' ? '✓ ' + t.evaluationDone : t.submitEvaluation}
