@@ -12,7 +12,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ShieldAlert,
   ChevronRight,
   Globe,
   UserCheck,
@@ -47,16 +46,6 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
 
   const t = translations[lang]
 
-  const handleRoleChange = (newRole: UserRole) => {
-    dataService.setRole(newRole)
-    toast.success(
-      lang === 'ar'
-        ? `تم التبديل إلى دور: ${t[newRole as keyof typeof t]}`
-        : `Switched view to ${t[newRole as keyof typeof t]}`
-    )
-    router.refresh()
-  }
-
   const handleLangToggle = () => {
     const nextLang = lang === 'en' ? 'ar' : 'en'
     dataService.setLanguage(nextLang)
@@ -64,11 +53,12 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
   }
 
   const handleSignOut = () => {
-    document.cookie = 'vamos_demo_role=; path=/; max-age=0'
+    dataService.logout()
+    toast.info(lang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Signed out successfully')
     router.push('/auth/login')
   }
 
-  // Navigation Items per Role
+  // Navigation Items per Role (STRICT SEPARATION: each role sees ONLY their allowed tools)
   const navItems = []
 
   if (role === 'owner') {
@@ -101,63 +91,61 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
     )
   }
 
+  // Role display badge
+  const roleBadgeTitle =
+    role === 'owner'
+      ? lang === 'ar'
+        ? 'مالك الأكاديمية'
+        : 'Academy Owner'
+      : role === 'operations'
+      ? lang === 'ar'
+        ? 'مدير العمليات'
+        : 'Operations Manager'
+      : lang === 'ar'
+      ? 'مدرب بادل معتمد'
+      : 'Padel Coach'
+
   return (
-    <aside className="w-64 bg-[#123C35] text-white flex flex-col h-full select-none border-r border-[#176B50]/40">
-      {/* Brand Header */}
-      <div className="p-6 border-b border-[#176B50]/30">
+    <aside className="w-64 bg-[#0F222D] text-white flex flex-col h-full select-none border-r border-[#1B3B4B]">
+      {/* Brand Header with Official VAMOS Logo */}
+      <div className="p-5 border-b border-[#1B3B4B]/80 bg-[#162E3B]/60">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-[#C7F36B] flex items-center justify-center text-[#123C35] font-black text-xl shadow-md transition-transform group-hover:scale-105">
-            V
+          <div className="w-11 h-11 rounded-full bg-white p-0.5 shadow-md flex items-center justify-center shrink-0 ring-2 ring-[#4D97B8]/40 transition-transform group-hover:scale-105">
+            <img
+              src="/logo.png"
+              alt="VAMOS Logo"
+              className="w-full h-full object-contain rounded-full"
+            />
           </div>
-          <div>
+          <div className="overflow-hidden">
             <div className="flex items-center gap-1.5">
-              <span className="font-black text-2xl tracking-wider text-white">VAMOS</span>
-              <span className="w-2 h-2 rounded-full bg-[#C7F36B]" />
+              <span className="font-black text-xl tracking-wider text-white">VAMOS</span>
+              <span className="w-2 h-2 rounded-full bg-[#4D97B8]" />
             </div>
-            <p className="text-[10px] font-bold tracking-[0.2em] text-[#C7F36B]/90 uppercase">
-              {t.brandTagline}
+            <p className="text-[10px] font-bold tracking-[0.2em] text-[#86C2DE] uppercase truncate">
+              {lang === 'ar' ? 'أكاديمية البادل' : 'Padel Academy'}
             </p>
           </div>
         </Link>
       </div>
 
-      {/* Role Switcher (Crucial for testing all 3 roles effortlessly) */}
-      <div className="px-4 py-3 bg-[#0d2d28] border-b border-[#176B50]/30">
-        <div className="text-[11px] font-semibold text-white/50 mb-1.5 flex items-center justify-between">
-          <span>{t.switchRole}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C7F36B]/20 text-[#C7F36B] font-mono">
-            {role.toUpperCase()}
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-1 bg-black/20 p-1 rounded-lg">
-          <button
-            onClick={() => handleRoleChange('owner')}
-            className={cn(
-              'text-[11px] py-1 rounded font-medium transition-all',
-              role === 'owner' ? 'bg-[#C7F36B] text-[#123C35] font-bold shadow' : 'text-white/60 hover:text-white'
-            )}
-          >
-            Owner
-          </button>
-          <button
-            onClick={() => handleRoleChange('operations')}
-            className={cn(
-              'text-[11px] py-1 rounded font-medium transition-all',
-              role === 'operations' ? 'bg-[#C7F36B] text-[#123C35] font-bold shadow' : 'text-white/60 hover:text-white'
-            )}
-          >
-            Ops
-          </button>
-          <button
-            onClick={() => handleRoleChange('coach')}
-            className={cn(
-              'text-[11px] py-1 rounded font-medium transition-all',
-              role === 'coach' ? 'bg-[#C7F36B] text-[#123C35] font-bold shadow' : 'text-white/60 hover:text-white'
-            )}
-          >
-            Coach
-          </button>
-        </div>
+      {/* Role Pill Banner (Visual indicator of current role, NOT a switcher) */}
+      <div className="px-4 py-2.5 bg-[#122733] border-b border-[#1B3B4B]/60 flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-wider font-bold text-white/50">
+          {lang === 'ar' ? 'البوابة الحالية' : 'Current Portal'}
+        </span>
+        <span
+          className={cn(
+            'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase font-mono tracking-wide',
+            role === 'owner'
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              : role === 'operations'
+              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+          )}
+        >
+          {role.toUpperCase()}
+        </span>
       </div>
 
       {/* Navigation Links */}
@@ -173,57 +161,63 @@ export function Sidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
               className={cn(
                 'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all group',
                 isActive
-                  ? 'bg-[#C7F36B] text-[#123C35] shadow-sm font-bold'
-                  : 'text-white/70 hover:bg-[#176B50]/40 hover:text-white'
+                  ? 'bg-[#4D97B8] text-white shadow-md font-bold'
+                  : 'text-white/70 hover:bg-[#162E3B] hover:text-white'
               )}
             >
               <Icon
                 className={cn(
                   'w-4 h-4 transition-colors',
-                  isActive ? 'text-[#123C35]' : 'text-white/60 group-hover:text-white'
+                  isActive ? 'text-white' : 'text-[#86C2DE] group-hover:text-white'
                 )}
               />
               <span className="flex-1">{item.label}</span>
-              {isActive && <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
+              {isActive && <ChevronRight className="w-3.5 h-3.5 opacity-80" />}
             </Link>
           )
         })}
       </nav>
 
       {/* Footer / User Profile & Language Switcher */}
-      <div className="p-4 border-t border-[#176B50]/30 bg-[#0d2d28]/60 space-y-3">
+      <div className="p-4 border-t border-[#1B3B4B] bg-[#0A1820] space-y-3">
         {/* Language switch button */}
         <button
+          type="button"
           onClick={handleLangToggle}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white/80 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 transition-colors cursor-pointer"
         >
           <span className="flex items-center gap-2">
-            <Globe className="w-3.5 h-3.5 text-[#C7F36B]" />
+            <Globe className="w-3.5 h-3.5 text-[#4D97B8]" />
             <span>Language / اللغة</span>
           </span>
-          <span className="font-bold text-[#C7F36B]">{lang === 'en' ? 'العربية' : 'English'}</span>
+          <span className="font-bold text-[#86C2DE]">
+            {lang === 'en' ? 'العربية' : 'English'}
+          </span>
         </button>
 
         {/* User Card */}
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-[#176B50] border border-[#C7F36B]/40 flex items-center justify-center font-bold text-xs text-white shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#162E3B] border border-[#4D97B8]/40 flex items-center justify-center font-bold text-xs text-white shrink-0">
               {currentUser.full_name.slice(0, 2).toUpperCase()}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-white truncate">
-                {lang === 'ar' ? currentUser.full_name_ar || currentUser.full_name : currentUser.full_name}
+                {lang === 'ar'
+                  ? currentUser.full_name_ar || currentUser.full_name
+                  : currentUser.full_name}
               </p>
-              <p className="text-[10px] text-[#C7F36B] capitalize font-medium">
-                {t[role as keyof typeof t]}
+              <p className="text-[10px] text-[#86C2DE] truncate font-medium">
+                {roleBadgeTitle}
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={handleSignOut}
             title={t.signOut}
-            className="p-1.5 rounded-lg text-white/50 hover:text-red-400 hover:bg-white/5 transition-colors"
+            className="p-2 rounded-lg text-white/50 hover:text-red-400 hover:bg-white/10 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

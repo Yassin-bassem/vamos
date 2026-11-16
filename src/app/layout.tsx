@@ -7,6 +7,10 @@ import React from 'react'
 export const metadata: Metadata = {
   title: 'VAMOS Padel Academy',
   description: 'Professional padel academy management system for coaches, players, and administrators.',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 export default function RootLayout({
@@ -16,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-[#F7F7F2] text-[#202723] antialiased">
+      <body className="min-h-screen bg-[#F4F8FA] text-[#0F222D] antialiased">
         <QueryProvider>
           {children}
         </QueryProvider>

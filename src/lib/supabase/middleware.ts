@@ -1,64 +1,35 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
   const { pathname } = request.nextUrl
-
-  // Check for demo bypass cookie / role selection
   const demoRole = request.cookies.get('vamos_demo_role')?.value
 
-  if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder')) {
-    // Demo / offline mode: allow access or route to login
-    if (!demoRole && !pathname.startsWith('/auth') && pathname !== '/') {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
-    }
-    if (demoRole && pathname.startsWith('/auth')) {
+  // Static files or api routes pass through
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') // images, logo, favicon, etc.
+  ) {
+    return NextResponse.next()
+  }
+
+  // Root redirect
+  if (pathname === '/') {
+    if (demoRole) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-    return supabaseResponse
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  try {
-    const supabase = createServerClient(supabaseUrl, supabaseKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    })
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (pathname.startsWith('/auth')) {
-      if (user || demoRole) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-      return supabaseResponse
-    }
-
-    if (!user && !demoRole && !pathname.startsWith('/auth') && pathname !== '/') {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
-    }
-  } catch (e) {
-    // Fallback if supabase client fails
-    console.error('Supabase middleware error:', e)
+  // If user is accessing dashboard but has no session, redirect to login
+  if (pathname.startsWith('/dashboard') && !demoRole) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  return supabaseResponse
+  // If user is already logged in and hits /auth/login, send to dashboard
+  if (pathname.startsWith('/auth') && demoRole) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  return NextResponse.next()
 }

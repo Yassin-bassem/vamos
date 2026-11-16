@@ -3,11 +3,9 @@
 import React, { useState, useEffect } from 'react'
 import {
   Menu,
-  Bell,
   Globe,
   Clock,
-  Sparkles,
-  ChevronDown,
+  Plus,
 } from 'lucide-react'
 import { dataService } from '@/lib/data-service'
 import { translations, Locale } from '@/lib/i18n'
@@ -18,16 +16,19 @@ import Link from 'next/link'
 export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
   const [lang, setLang] = useState<Locale>('en')
   const [role, setRole] = useState<UserRole>('owner')
-  const [todayAtt, setTodayAtt] = useState(dataService.getTodayCoachAttendance('prof-coach-1'))
+  const [currentUser, setCurrentUser] = useState(dataService.getCurrentUser())
+  const [todayAtt, setTodayAtt] = useState(dataService.getTodayCoachAttendance(dataService.getCurrentUser().id))
 
   useEffect(() => {
     setLang(dataService.getLanguage())
     setRole(dataService.getCurrentRole())
+    setCurrentUser(dataService.getCurrentUser())
     setTodayAtt(dataService.getTodayCoachAttendance(dataService.getCurrentUser().id))
 
     const handleUpdate = () => {
       setLang(dataService.getLanguage())
       setRole(dataService.getCurrentRole())
+      setCurrentUser(dataService.getCurrentUser())
       setTodayAtt(dataService.getTodayCoachAttendance(dataService.getCurrentUser().id))
     }
     window.addEventListener('vamos_state_updated', handleUpdate)
@@ -53,24 +54,41 @@ export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
     }
   }
 
+  const roleLabel =
+    role === 'owner'
+      ? lang === 'ar' ? 'مالك الأكاديمية' : 'Academy Owner'
+      : role === 'operations'
+      ? lang === 'ar' ? 'مدير العمليات' : 'Operations Manager'
+      : lang === 'ar' ? 'مدرب بادل' : 'Coach'
+
   return (
-    <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
-      {/* Mobile Hamburger & Page Title */}
+    <header className="h-16 bg-white border-b border-[#E1ECF2] flex items-center justify-between px-4 lg:px-8 z-10 shrink-0 shadow-xs">
+      {/* Mobile Hamburger & Page Title with VAMOS logo */}
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={onOpenMobile}
           className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2">
-          <span className="font-extrabold text-lg text-[#123C35]">
-            VAMOS
-          </span>
-          <span className="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-[#123C35]/5 text-[#176B50]">
-            Padel Academy
-          </span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-white p-0.5 border border-[#4D97B8]/40 shadow-xs flex items-center justify-center shrink-0">
+            <img
+              src="/logo.png"
+              alt="VAMOS Logo"
+              className="w-full h-full object-contain rounded-full"
+            />
+          </div>
+          <div>
+            <span className="font-extrabold text-base sm:text-lg text-[#0F222D]">
+              VAMOS
+            </span>
+            <span className="hidden sm:inline-block ml-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EBF5F9] text-[#2C7598]">
+              Padel Academy
+            </span>
+          </div>
         </div>
       </div>
 
@@ -79,12 +97,13 @@ export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
         {/* Quick Check-in for Coaches */}
         {role === 'coach' && (
           <button
+            type="button"
             onClick={handleCoachQuickCheckIn}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
               !todayAtt
-                ? 'bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a]'
+                ? 'bg-[#4D97B8] text-white hover:bg-[#3D85A5]'
                 : !todayAtt.check_out_time
-                ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300'
+                ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
             }`}
           >
@@ -103,25 +122,40 @@ export function TopNav({ onOpenMobile }: { onOpenMobile?: () => void }) {
         {(role === 'owner' || role === 'operations') && (
           <Link
             href="/dashboard/schedule"
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] transition-all shadow-sm"
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#4D97B8] text-white hover:bg-[#3D85A5] transition-all shadow-xs"
           >
+            <Plus className="w-3.5 h-3.5" />
             <span>{t.newSession}</span>
           </Link>
         )}
 
         {/* Language Switcher Pill */}
         <button
+          type="button"
           onClick={handleLangToggle}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-[#CBDDE6] text-xs font-semibold text-[#162E3B] hover:bg-[#F0F6FA] transition-colors cursor-pointer"
         >
-          <Globe className="w-3.5 h-3.5 text-[#176B50]" />
+          <Globe className="w-3.5 h-3.5 text-[#4D97B8]" />
           <span>{lang === 'en' ? 'عربي' : 'EN'}</span>
         </button>
 
-        {/* Role Pill */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold">
-          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-          <span>{t[role as keyof typeof t]}</span>
+        {/* Current User & Role Pill */}
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F0F6FA] border border-[#D5E5ED] text-xs font-medium text-[#162E3B]">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              role === 'owner'
+                ? 'bg-emerald-500'
+                : role === 'operations'
+                ? 'bg-blue-500'
+                : 'bg-amber-500'
+            }`}
+          />
+          <span className="font-bold">
+            {lang === 'ar' ? currentUser.full_name_ar || currentUser.full_name : currentUser.full_name}
+          </span>
+          <span className="text-[11px] text-gray-500">
+            ({roleLabel})
+          </span>
         </div>
       </div>
     </header>

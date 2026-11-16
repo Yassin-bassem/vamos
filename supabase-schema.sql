@@ -25,6 +25,8 @@ CREATE TYPE player_level AS ENUM ('beginner', 'lower_intermediate', 'intermediat
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
+  username TEXT UNIQUE,
+  password TEXT,
   full_name TEXT NOT NULL,
   full_name_ar TEXT,
   role user_role NOT NULL DEFAULT 'coach',
@@ -97,7 +99,7 @@ CREATE TABLE public.sessions (
   status session_status NOT NULL DEFAULT 'scheduled',
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ NOT NULL,
-  duration_minutes INTEGER NOT NULL GENERATED ALWAYS AS (EXTRACT(EPOCH FROM (end_time - start_time)) / 60)::INTEGER STORED,
+  duration_minutes INTEGER NOT NULL DEFAULT 60,
   notes TEXT,
   cancellation_reason TEXT,
   cancelled_by UUID REFERENCES public.profiles(id),
@@ -213,13 +215,7 @@ CREATE TABLE public.coach_attendance (
   check_in_time TIMESTAMPTZ,
   check_out_time TIMESTAMPTZ,
   status coach_attendance_status NOT NULL DEFAULT 'present',
-  total_hours NUMERIC(4,2) GENERATED ALWAYS AS (
-    CASE 
-      WHEN check_in_time IS NOT NULL AND check_out_time IS NOT NULL 
-      THEN ROUND(EXTRACT(EPOCH FROM (check_out_time - check_in_time)) / 3600, 2)
-      ELSE NULL 
-    END
-  ) STORED,
+  total_hours NUMERIC(4,2),
   notes TEXT,
   reviewed_by UUID REFERENCES public.profiles(id),
   reviewed_at TIMESTAMPTZ,
@@ -330,6 +326,42 @@ CREATE TRIGGER update_evaluations_updated_at BEFORE UPDATE ON public.evaluations
 CREATE TRIGGER update_coach_attendance_updated_at BEFORE UPDATE ON public.coach_attendance FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_session_attendance_updated_at BEFORE UPDATE ON public.session_attendance FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_academy_settings_updated_at BEFORE UPDATE ON public.academy_settings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Auto-calculate session duration if omitted or updated
+CREATE OR REPLACE FUNCTION public.calculate_session_duration()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.start_time IS NOT NULL AND NEW.end_time IS NOT NULL THEN
+    IF NEW.duration_minutes IS NULL OR NEW.duration_minutes <= 0 THEN
+      NEW.duration_minutes := ROUND(EXTRACT(EPOCH FROM (NEW.end_time - NEW.start_time)) / 60)::INTEGER;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_calculate_session_duration
+  BEFORE INSERT OR UPDATE ON public.sessions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.calculate_session_duration();
+
+-- Auto-calculate coach attendance hours
+CREATE OR REPLACE FUNCTION public.calculate_coach_attendance_hours()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.check_in_time IS NOT NULL AND NEW.check_out_time IS NOT NULL THEN
+    NEW.total_hours := ROUND((EXTRACT(EPOCH FROM (NEW.check_out_time - NEW.check_in_time)) / 3600.0)::NUMERIC, 2);
+  ELSE
+    NEW.total_hours := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_calculate_coach_attendance_hours
+  BEFORE INSERT OR UPDATE ON public.coach_attendance
+  FOR EACH ROW
+  EXECUTE FUNCTION public.calculate_coach_attendance_hours();
 
 -- ============================================================
 -- AUTO-CREATE PROFILE ON AUTH USER CREATION

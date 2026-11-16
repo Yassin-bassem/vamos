@@ -24,9 +24,11 @@ import { PADEL_SKILLS } from '@/lib/constants'
 export const SEED_PROFILES: Profile[] = [
   {
     id: 'prof-owner-1',
-    email: 'owner@vamospadel.com',
-    full_name: 'Yassin Bassem',
-    full_name_ar: 'ياسين باسم',
+    email: 'zaghloul@vamospadel.com',
+    username: 'zaghloul',
+    password: '2580',
+    full_name: 'Zaghloul (Owner)',
+    full_name_ar: 'زغلول (مالك الأكاديمية)',
     role: 'owner',
     phone: '+20 100 111 2222',
     avatar_url: null,
@@ -36,9 +38,11 @@ export const SEED_PROFILES: Profile[] = [
   },
   {
     id: 'prof-ops-1',
-    email: 'operations@vamospadel.com',
-    full_name: 'Karim Tarek',
-    full_name_ar: 'كريم طارق',
+    email: 'nada@vamospadel.com',
+    username: 'nada',
+    password: '4567',
+    full_name: 'Nada (Operations)',
+    full_name_ar: 'ندى (العمليات)',
     role: 'operations',
     phone: '+20 100 333 4444',
     avatar_url: null,
@@ -49,6 +53,8 @@ export const SEED_PROFILES: Profile[] = [
   {
     id: 'prof-coach-1',
     email: 'coach.ahmed@vamospadel.com',
+    username: 'ahmed',
+    password: '1234',
     full_name: 'Ahmed Hassan',
     full_name_ar: 'أحمد حسن',
     role: 'coach',
@@ -61,6 +67,8 @@ export const SEED_PROFILES: Profile[] = [
   {
     id: 'prof-coach-2',
     email: 'coach.sara@vamospadel.com',
+    username: 'sara',
+    password: '1234',
     full_name: 'Sara Mansour',
     full_name_ar: 'سارة منصور',
     role: 'coach',
@@ -73,6 +81,8 @@ export const SEED_PROFILES: Profile[] = [
   {
     id: 'prof-coach-3',
     email: 'coach.omar@vamospadel.com',
+    username: 'omar',
+    password: '1234',
     full_name: 'Omar Khaled',
     full_name_ar: 'عمر خالد',
     role: 'coach',
@@ -495,7 +505,7 @@ export const SEED_SCHEDULE_LOGS: ScheduleChangeLog[] = [
 
 // ─── Local State Management with LocalStorage ────────────────────────────────
 
-const STORAGE_KEY = 'vamos_academy_state_v1'
+const STORAGE_KEY = 'vamos_academy_state_v4'
 
 interface AcademyState {
   profiles: Profile[]
@@ -576,6 +586,7 @@ function persistState(state: AcademyState) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
       // Also update cookies for middleware
       document.cookie = `vamos_demo_role=${state.currentRole}; path=/; max-age=86400`
+      document.cookie = `vamos_user_id=${state.currentUserId}; path=/; max-age=86400`
       window.dispatchEvent(new Event('vamos_state_updated'))
     } catch (e) {
       console.error('Failed to persist state', e)
@@ -586,6 +597,85 @@ function persistState(state: AcademyState) {
 // ─── Public Data Service API ──────────────────────────────────────────────────
 
 export const dataService = {
+  // Authentication & Session
+  loginWithCredentials: (username: string, password: string): { success: boolean; user?: Profile; error?: string } => {
+    const cleanUser = username.trim().toLowerCase()
+    const cleanPass = password.trim()
+
+    const found = memoryState.profiles.find(
+      (p) => (p.username?.toLowerCase() === cleanUser || p.email?.toLowerCase() === cleanUser) && p.password === cleanPass
+    )
+
+    if (!found) {
+      return { success: false, error: 'Invalid username or password' }
+    }
+
+    if (!found.is_active) {
+      return { success: false, error: 'Account is deactivated' }
+    }
+
+    persistState({
+      ...memoryState,
+      currentRole: found.role,
+      currentUserId: found.id,
+    })
+
+    return { success: true, user: found }
+  },
+
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      document.cookie = 'vamos_demo_role=; path=/; max-age=0'
+      document.cookie = 'vamos_user_id=; path=/; max-age=0'
+    }
+  },
+
+  createCoachAccount: (data: {
+    full_name: string
+    full_name_ar?: string
+    username: string
+    password: string
+    phone?: string
+    email?: string
+  }): { success: boolean; coach?: Profile; error?: string } => {
+    const cleanUser = data.username.trim().toLowerCase()
+    const cleanPass = data.password.trim()
+
+    if (!cleanUser || !cleanPass || !data.full_name.trim()) {
+      return { success: false, error: 'Name, username and password are required' }
+    }
+
+    const exists = memoryState.profiles.some(
+      (p) => p.username?.toLowerCase() === cleanUser || (data.email && p.email?.toLowerCase() === data.email.trim().toLowerCase())
+    )
+
+    if (exists) {
+      return { success: false, error: 'Username or email is already taken' }
+    }
+
+    const newCoach: Profile = {
+      id: `prof-coach-${Date.now()}`,
+      email: data.email?.trim() || `${cleanUser}@vamospadel.com`,
+      username: cleanUser,
+      password: cleanPass,
+      full_name: data.full_name.trim(),
+      full_name_ar: data.full_name_ar?.trim() || data.full_name.trim(),
+      role: 'coach',
+      phone: data.phone?.trim() || '+20 100 000 0000',
+      avatar_url: null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    persistState({
+      ...memoryState,
+      profiles: [...memoryState.profiles, newCoach],
+    })
+
+    return { success: true, coach: newCoach }
+  },
+
   // State getters
   getState: () => memoryState,
 

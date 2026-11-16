@@ -45,6 +45,8 @@ export type PlayerLevel =
 export interface Profile {
   id: string
   email: string
+  username?: string
+  password?: string
   full_name: string
   full_name_ar: string | null
   role: UserRole
