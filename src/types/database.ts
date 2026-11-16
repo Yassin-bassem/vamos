@@ -106,6 +106,7 @@ export interface Session {
   price_per_player: number | null
   notes: string | null
   notes_ar: string | null
+  cancellation_reason?: string | null
   is_recurring: boolean
   recurrence_rule: string | null
   parent_session_id: string | null

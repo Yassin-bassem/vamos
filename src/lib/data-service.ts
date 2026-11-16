@@ -298,6 +298,7 @@ export async function syncFromSupabase() {
           price_per_player: s.price_per_player || 400,
           notes: s.notes || null,
           notes_ar: s.notes_ar || null,
+          cancellation_reason: s.cancellation_reason || null,
           is_recurring: false,
           recurrence_rule: null,
           parent_session_id: null,
@@ -1006,6 +1007,7 @@ export const dataService = {
           coach_id: newCoachId,
           court_id: newCourtId,
           status: updates.status || s.status,
+          cancellation_reason: updates.cancellationReason || s.cancellation_reason || null,
           notes: updates.cancellationReason
             ? `${s.notes || ''} [Cancelled: ${updates.cancellationReason}]`
             : s.notes,
@@ -1052,10 +1054,34 @@ export const dataService = {
       typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : '00000000-0000-4000-8000-' + Date.now().toString().padStart(12, '0')
+
+    // Ensure coachId is a valid UUID present in profiles
+    let validCoachId = params.coachId
+    const profileMatch = memoryState.profiles.find((p) => p.id === validCoachId || p.username === validCoachId)
+    if (profileMatch) {
+      validCoachId = profileMatch.id
+    } else {
+      const sess = memoryState.sessions.find((s) => s.id === params.sessionId)
+      if (sess?.coach_id && memoryState.profiles.some((p) => p.id === sess.coach_id)) {
+        validCoachId = sess.coach_id
+      } else if (memoryState.profiles[0]) {
+        validCoachId = memoryState.profiles[0].id
+      }
+    }
+
+    // Ensure playerId is a valid UUID present in players
+    let validPlayerId = params.playerId
+    const playerMatch = memoryState.players.find((p) => p.id === validPlayerId)
+    if (playerMatch) {
+      validPlayerId = playerMatch.id
+    } else if (memoryState.players[0]) {
+      validPlayerId = memoryState.players[0].id
+    }
+
     const newEval: Evaluation = {
       id: evalId,
-      player_id: params.playerId,
-      coach_id: params.coachId,
+      player_id: validPlayerId,
+      coach_id: validCoachId,
       session_id: params.sessionId,
       evaluation_date: getTodayDateStr(),
       overall_rating: params.overallRating,
@@ -1081,18 +1107,35 @@ export const dataService = {
       if (supabase) {
         supabase
           .from('evaluations')
-          .insert([
+          .upsert([
             {
               id: evalId,
-              player_id: params.playerId,
-              coach_id: params.coachId,
+              player_id: validPlayerId,
+              coach_id: validCoachId,
               session_id: params.sessionId,
               overall_rating: params.overallRating,
-              notes: params.notes || null,
+              coach_comments: params.notes || null,
+              session_summary: params.notes || null,
             },
           ])
           .then(({ error }) => {
-            if (error) console.error('Supabase evaluation insert error:', error.message)
+            if (error) console.error('Supabase evaluation upsert error:', error.message)
+          })
+
+        supabase
+          .from('session_players')
+          .upsert(
+            [
+              {
+                session_id: params.sessionId,
+                player_id: validPlayerId,
+                status: 'attended',
+              },
+            ],
+            { onConflict: 'session_id,player_id' }
+          )
+          .then(({ error }) => {
+            if (error) console.error('Supabase session_players attended error:', error.message)
           })
 
         supabase
@@ -1115,12 +1158,26 @@ export const dataService = {
       return s
     })
 
+    let hasPlayerInSession = false
     const updatedSessionPlayers = memoryState.sessionPlayers.map((sp) => {
-      if (sp.session_id === params.sessionId && sp.player_id === params.playerId) {
+      if (sp.session_id === params.sessionId && sp.player_id === validPlayerId) {
+        hasPlayerInSession = true
         return { ...sp, status: 'attended' as const }
       }
       return sp
     })
+
+    if (!hasPlayerInSession) {
+      updatedSessionPlayers.push({
+        id: `sp-${Date.now()}`,
+        session_id: params.sessionId,
+        player_id: validPlayerId,
+        status: 'attended',
+        registered_at: new Date().toISOString(),
+        notes: null,
+        registered_by: 'coach',
+      })
+    }
 
     persistState({
       ...memoryState,

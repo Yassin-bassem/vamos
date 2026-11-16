@@ -224,6 +224,25 @@ export function OpsDashboard() {
             </div>
             <p className="text-xs text-gray-500">{t.reasonPrompt}</p>
 
+            {/* Quick Chips */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { en: 'Player did not come / show up', ar: 'لم يحضر اللاعب (Did not come)' },
+                { en: 'Player requested cancellation', ar: 'طلب اللاعب الإلغاء' },
+                { en: 'Court unplayable / Maintenance', ar: 'الملعب غير متاح / صيانة' },
+                { en: 'Emergency issue', ar: 'ظرف طارئ' },
+              ].map((chip) => (
+                <button
+                  key={chip.en}
+                  type="button"
+                  onClick={() => setCancelReason(lang === 'ar' ? chip.ar : chip.en)}
+                  className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-[11px] font-bold text-gray-700 transition-colors"
+                >
+                  {lang === 'ar' ? chip.ar : chip.en}
+                </button>
+              ))}
+            </div>
+
             <textarea
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}

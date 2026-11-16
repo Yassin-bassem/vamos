@@ -475,12 +475,25 @@ export default function SchedulePage() {
                     )}
 
                     {role === 'coach' && sess.status !== 'cancelled' && (
-                      <Link
-                        href={`/dashboard/schedule/evaluate?id=${sess.id}`}
-                        className="px-3 py-1 text-xs font-bold rounded-lg bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] transition-all"
-                      >
-                        {sess.status === 'completed' ? '✓ ' + t.evaluationDone : t.submitEvaluation}
-                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        {sess.status !== 'completed' && (
+                          <button
+                            onClick={() => {
+                              setCancelModalSession(sess)
+                              setCancelReason(lang === 'ar' ? 'لم يحضر اللاعب (Did not come)' : 'Player did not come / show up')
+                            }}
+                            className="px-2.5 py-1 text-xs font-bold rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            {lang === 'ar' ? 'رفض الجلسة' : 'Reject Session'}
+                          </button>
+                        )}
+                        <Link
+                          href={`/dashboard/schedule/evaluate?id=${sess.id}`}
+                          className="px-3 py-1 text-xs font-bold rounded-lg bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] transition-all"
+                        >
+                          {sess.status === 'completed' ? '✓ ' + t.evaluationDone : t.submitEvaluation}
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -693,6 +706,25 @@ export default function SchedulePage() {
               <span>{t.cancelSession}</span>
             </div>
             <p className="text-xs text-gray-500">{t.reasonPrompt}</p>
+
+            {/* Quick Chips */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { en: 'Player did not come / show up', ar: 'لم يحضر اللاعب (Did not come)' },
+                { en: 'Player cancelled last minute', ar: 'اعتذر اللاعب في اللحظات الأخيرة' },
+                { en: 'Court unplayable / Maintenance', ar: 'الملعب غير متاح / صيانة' },
+                { en: 'Emergency issue', ar: 'ظرف طارئ' },
+              ].map((chip) => (
+                <button
+                  key={chip.en}
+                  type="button"
+                  onClick={() => setCancelReason(lang === 'ar' ? chip.ar : chip.en)}
+                  className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-[11px] font-bold text-gray-700 transition-colors"
+                >
+                  {lang === 'ar' ? chip.ar : chip.en}
+                </button>
+              ))}
+            </div>
 
             <textarea
               value={cancelReason}

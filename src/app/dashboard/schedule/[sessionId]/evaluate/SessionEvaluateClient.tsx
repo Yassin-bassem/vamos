@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   Sparkles,
   User,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react'
 import { dataService } from '@/lib/data-service'
 import { translations, Locale } from '@/lib/i18n'
@@ -105,51 +107,108 @@ export default function EvaluateSessionPage() {
     )
   }
 
-  const players = session.session_players?.map((sp) => sp.player).filter(Boolean) as Player[]
-  const currentPlayer = players[activePlayerIndex] || players[0]
+  const sessionPlayers = (session.session_players?.map((sp) => sp.player).filter(Boolean) as Player[]) || []
+  const [allAcademyPlayers, setAllAcademyPlayers] = useState<Player[]>([])
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+
+  // Reject / Cancel Modal state
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('Player did not show up (Did not come) / لم يحضر اللاعب')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    const list = dataService.getPlayers()
+    setAllAcademyPlayers(list)
+    if (sessionPlayers.length > 0) {
+      setSelectedPlayerId(sessionPlayers[activePlayerIndex]?.id || sessionPlayers[0].id)
+    } else if (list.length > 0 && !selectedPlayerId) {
+      setSelectedPlayerId(list[0].id)
+    }
+  }, [session, activePlayerIndex])
+
+  const players = sessionPlayers.length > 0 ? sessionPlayers : allAcademyPlayers
+  const currentPlayer = sessionPlayers.length > 0
+    ? (sessionPlayers[activePlayerIndex] || sessionPlayers[0])
+    : (allAcademyPlayers.find((p) => p.id === selectedPlayerId) || allAcademyPlayers[0])
 
   const handleRatingChange = (key: string, val: number) => {
     setSkillRatings((prev) => ({ ...prev, [key]: val }))
   }
 
-  const handleSubmitEvaluation = (e: React.FormEvent) => {
+  const handleRejectSession = () => {
+    if (!rejectReason.trim()) {
+      toast.error(lang === 'ar' ? 'يرجى كتابة سبب الرفض' : 'Please provide a reason')
+      return
+    }
+    const res = dataService.updateSession(session.id, {
+      status: 'cancelled',
+      cancellationReason: rejectReason.trim(),
+    })
+    if (res.success) {
+      toast.success(
+        lang === 'ar'
+          ? 'تم رفض وإلغاء الجلسة بنجاح مع تسجيل السبب'
+          : 'Session rejected and marked as cancelled!'
+      )
+      setShowRejectModal(false)
+      router.push(`/dashboard/schedule/view?id=${session.id}`)
+    } else {
+      toast.error(res.error || 'Failed to reject session')
+    }
+  }
+
+  const handleSubmitEvaluation = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!currentPlayer) return
+    if (!currentPlayer) {
+      toast.error(
+        lang === 'ar'
+          ? 'يرجى اختيار اللاعب المراد تقييمه أو إضافة لاعب للأكاديمية أولاً'
+          : 'Please select a player to evaluate'
+      )
+      return
+    }
 
-    const currentUser = dataService.getCurrentUser()
+    setIsSubmitting(true)
+    try {
+      const currentUser = dataService.getCurrentUser()
 
-    const fullNotes = [
-      coachNotes ? `Coach Feedback: ${coachNotes}` : '',
-      nextFocus ? `Next Focus: ${nextFocus}` : '',
-      drills ? `Recommended Drills: ${drills}` : '',
-    ]
-      .filter(Boolean)
-      .join('\n\n')
+      const fullNotes = [
+        coachNotes ? `Coach Feedback: ${coachNotes}` : '',
+        nextFocus ? `Next Focus: ${nextFocus}` : '',
+        drills ? `Recommended Drills: ${drills}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n')
 
-    dataService.submitEvaluation({
-      sessionId: session.id,
-      playerId: currentPlayer.id,
-      coachId: currentUser.id,
-      overallRating,
-      skills: skillRatings,
-      notes: fullNotes,
-    })
+      dataService.submitEvaluation({
+        sessionId: session.id,
+        playerId: currentPlayer.id,
+        coachId: session.coach_id || currentUser.id,
+        overallRating,
+        skills: skillRatings,
+        notes: fullNotes,
+      })
 
-    toast.success(
-      lang === 'ar'
-        ? `تم اعتماد تقييم ${currentPlayer.full_name} بنجاح وإغلاق الجلسة`
-        : `Evaluation submitted for ${currentPlayer.full_name}!`
-    )
+      toast.success(
+        lang === 'ar'
+          ? `تم اعتماد تقييم ${currentPlayer.full_name} بنجاح وإغلاق الجلسة`
+          : `Evaluation submitted for ${currentPlayer.full_name}!`
+      )
 
-    // If more players in group session, proceed to next player
-    if (activePlayerIndex < players.length - 1) {
-      setActivePlayerIndex((prev) => prev + 1)
-      setCoachNotes('')
-      setNextFocus('')
-      setDrills('')
-    } else {
-      router.push(`/dashboard/schedule/view?id=${session.id}`)
+      // If more players in group session, proceed to next player
+      if (sessionPlayers.length > 1 && activePlayerIndex < sessionPlayers.length - 1) {
+        setActivePlayerIndex((prev) => prev + 1)
+        setCoachNotes('')
+        setNextFocus('')
+        setDrills('')
+      } else {
+        router.push(`/dashboard/schedule/view?id=${session.id}`)
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to submit evaluation')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -165,6 +224,54 @@ export default function EvaluateSessionPage() {
           <span>{lang === 'ar' ? 'العودة إلى تفاصيل الجلسة' : 'Back to Session Details'}</span>
         </Link>
       </div>
+
+      {/* Quick Option to Reject Session if player didn't show up */}
+      {session.status !== 'cancelled' && session.status !== 'completed' && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 text-amber-900 text-xs">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="font-black">
+                {lang === 'ar' ? 'اللاعب لم يحضر للجلسة؟' : 'Player did not come / show up?'}
+              </p>
+              <p className="text-amber-700 text-[11px] mt-0.5">
+                {lang === 'ar'
+                  ? 'يمكنك رفض وإلغاء الجلسة فوراً مع تسجيل سبب عدم الحضور'
+                  : 'You can reject and cancel this session with a reason (e.g. did not came)'}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setRejectReason(lang === 'ar' ? 'لم يحضر اللاعب (Did not come)' : 'Player did not come / show up')
+              setShowRejectModal(true)
+            }}
+            className="border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold shrink-0 self-start sm:self-center"
+          >
+            <XCircle className="w-4 h-4 mr-1 text-red-500" />
+            <span>{lang === 'ar' ? 'رفض الجلسة (لم يحضر)' : 'Reject Session (Did Not Come)'}</span>
+          </Button>
+        </div>
+      )}
+
+      {/* If session is cancelled */}
+      {session.status === 'cancelled' && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs">
+          <p className="font-extrabold flex items-center gap-1.5">
+            <XCircle className="w-4 h-4 text-red-600" />
+            <span>{lang === 'ar' ? 'تم إلغاء / رفض هذه الجلسة مسبقاً' : 'This session has been cancelled / rejected'}</span>
+          </p>
+          {session.cancellation_reason && (
+            <p className="mt-1 text-red-700">
+              <span className="font-bold">{lang === 'ar' ? 'السبب:' : 'Reason:'} </span>
+              {session.cancellation_reason}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -201,6 +308,37 @@ export default function EvaluateSessionPage() {
           </div>
         )}
       </div>
+
+      {/* Select Player if session had no players assigned */}
+      {sessionPlayers.length === 0 && (
+        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2">
+          <div className="flex items-center gap-2 text-blue-900 text-xs font-bold">
+            <User className="w-4 h-4 text-blue-600" />
+            <span>
+              {lang === 'ar'
+                ? 'الجلسة لم يتم ربط لاعب بها مسبقاً. اختر اللاعب المراد تقييمه:'
+                : 'No player was linked to this session. Select player to evaluate:'}
+            </span>
+          </div>
+          {allAcademyPlayers.length > 0 ? (
+            <select
+              value={selectedPlayerId}
+              onChange={(e) => setSelectedPlayerId(e.target.value)}
+              className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#176B50]"
+            >
+              {allAcademyPlayers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.full_name} ({p.level}) - {p.phone || 'No phone'}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-xs text-red-600 font-bold">
+              {lang === 'ar' ? 'لا يوجد لاعبون مسجلون في النظام حالياً' : 'No players registered in the system yet.'}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Player Being Evaluated */}
       {currentPlayer && (
@@ -360,16 +498,35 @@ export default function EvaluateSessionPage() {
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-4 border-t border-gray-100 flex justify-end">
+          {/* Submit Button & Reject Button */}
+          <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {session.status !== 'cancelled' && session.status !== 'completed' && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setRejectReason(lang === 'ar' ? 'لم يحضر اللاعب (Did not come)' : 'Player did not come / show up')
+                  setShowRejectModal(true)
+                }}
+                className="border-red-300 text-red-600 hover:bg-red-50 text-xs font-bold w-full sm:w-auto"
+              >
+                <XCircle className="w-4 h-4 mr-1 text-red-500" />
+                <span>{lang === 'ar' ? 'رفض الجلسة (لم يحضر)' : 'Reject Session (Did Not Come)'}</span>
+              </Button>
+            )}
+
             <Button
               type="button"
+              disabled={isSubmitting}
               onClick={handleSubmitEvaluation}
-              className="bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] font-extrabold px-8 py-3 rounded-xl shadow-md text-sm"
+              className="bg-[#C7F36B] text-[#202723] hover:bg-[#b8e85a] font-extrabold px-8 py-3 rounded-xl shadow-md text-sm w-full sm:w-auto"
             >
               <CheckCircle2 className="w-4 h-4 mr-1.5" />
               <span>
-                {activePlayerIndex < players.length - 1
+                {isSubmitting
+                  ? (lang === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+                  : activePlayerIndex < players.length - 1
                   ? (lang === 'ar' ? 'حفظ والتقييم للاعب التالي' : 'Save & Next Player →')
                   : t.saveEvaluation}
               </span>
@@ -377,6 +534,80 @@ export default function EvaluateSessionPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reject Session Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2 text-red-600">
+                <XCircle className="w-5 h-5" />
+                <h3 className="font-extrabold text-base text-[#123C35]">
+                  {lang === 'ar' ? 'رفض / إلغاء الجلسة' : 'Reject / Cancel Session'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRejectModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-xs font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-600 mb-3">
+              {lang === 'ar'
+                ? 'يرجى تحديد أو كتابة سبب رفض وإلغاء هذه الجلسة:'
+                : 'Please select or provide the reason for rejecting this session:'}
+            </p>
+
+            {/* Quick Chips */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                { en: 'Player did not come / show up', ar: 'لم يحضر اللاعب (Did not come)' },
+                { en: 'Player cancelled last minute', ar: 'اعتذر اللاعب في اللحظات الأخيرة' },
+                { en: 'Court unplayable / Maintenance', ar: 'الملعب غير متاح / صيانة' },
+                { en: 'Coach emergency', ar: 'ظرف طارئ للمدرب' },
+              ].map((chip) => (
+                <button
+                  key={chip.en}
+                  type="button"
+                  onClick={() => setRejectReason(lang === 'ar' ? chip.ar : chip.en)}
+                  className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-[11px] font-bold text-gray-700 transition-colors"
+                >
+                  {lang === 'ar' ? chip.ar : chip.en}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder={lang === 'ar' ? 'اكتب سبب الرفض بالتفصيل...' : 'Reason for rejection...'}
+              className="w-full h-24 p-3 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-red-500 mb-4"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRejectModal(false)}
+              >
+                {lang === 'ar' ? 'تراجع' : 'Cancel'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleRejectSession}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold"
+              >
+                {lang === 'ar' ? 'تأكيد الرفض والإلغاء' : 'Confirm Rejection'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

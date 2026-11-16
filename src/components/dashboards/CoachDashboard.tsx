@@ -12,7 +12,9 @@ import {
   Play,
   ArrowRight,
   TrendingUp,
+  XCircle,
 } from 'lucide-react'
+import { Session } from '@/types/database'
 import { dataService, getTodayDateStr } from '@/lib/data-service'
 import { translations, Locale } from '@/lib/i18n'
 import { Card, CardContent } from '@/components/ui/card'
@@ -52,6 +54,32 @@ export function CoachDashboard() {
   }, [todayDate])
 
   const t = translations[lang]
+
+  const [rejectModalSession, setRejectModalSession] = useState<Session | null>(null)
+  const [rejectReason, setRejectReason] = useState('Player did not show up (Did not come) / لم يحضر اللاعب')
+
+  const handleRejectSession = () => {
+    if (!rejectModalSession) return
+    if (!rejectReason.trim()) {
+      toast.error(lang === 'ar' ? 'يرجى كتابة سبب الرفض' : 'Please provide a reason')
+      return
+    }
+    const res = dataService.updateSession(rejectModalSession.id, {
+      status: 'cancelled',
+      cancellationReason: rejectReason.trim(),
+    })
+    if (res.success) {
+      toast.success(
+        lang === 'ar'
+          ? 'تم رفض وإلغاء الجلسة بنجاح مع تسجيل السبب'
+          : 'Session rejected / cancelled successfully!'
+      )
+      setRejectModalSession(null)
+      setRejectReason('')
+    } else {
+      toast.error(res.error || 'Failed to reject session')
+    }
+  }
 
   const handleStartSession = (sessionId: string) => {
     dataService.updateSession(sessionId, { status: 'confirmed' })
@@ -184,13 +212,29 @@ export function CoachDashboard() {
 
                 {/* Action buttons (Touch-friendly for mobile courtside use) */}
                 <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-                  <Link
-                    href={`/dashboard/schedule/view?id=${sess.id}`}
-                    className="text-xs font-bold text-gray-600 hover:text-[#123C35] flex items-center gap-1"
-                  >
-                    <span>{t.details}</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/schedule/view?id=${sess.id}`}
+                      className="text-xs font-bold text-gray-600 hover:text-[#123C35] flex items-center gap-1"
+                    >
+                      <span>{t.details}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+
+                    {sess.status !== 'cancelled' && sess.status !== 'completed' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRejectReason(lang === 'ar' ? 'لم يحضر اللاعب (Did not come)' : 'Player did not come / show up')
+                          setRejectModalSession(sess)
+                        }}
+                        className="px-2.5 py-1 rounded-lg border border-red-200 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1 transition-colors"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>{lang === 'ar' ? 'رفض' : 'Reject'}</span>
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-2">
                     {sess.status === 'scheduled' && (
@@ -253,6 +297,80 @@ export function CoachDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reject Session Modal for Coach */}
+      {rejectModalSession && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2 text-red-600">
+                <XCircle className="w-5 h-5" />
+                <h3 className="font-extrabold text-base text-[#123C35]">
+                  {lang === 'ar' ? 'رفض / إلغاء الجلسة' : 'Reject / Cancel Session'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRejectModalSession(null)}
+                className="text-gray-400 hover:text-gray-600 text-xs font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-600 mb-3">
+              {lang === 'ar'
+                ? 'يرجى تحديد أو كتابة سبب رفض وإلغاء هذه الجلسة:'
+                : 'Please select or provide the reason for rejecting this session:'}
+            </p>
+
+            {/* Quick Chips */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                { en: 'Player did not come / show up', ar: 'لم يحضر اللاعب (Did not come)' },
+                { en: 'Player cancelled last minute', ar: 'اعتذر اللاعب في اللحظات الأخيرة' },
+                { en: 'Court unplayable / Maintenance', ar: 'الملعب غير متاح / صيانة' },
+                { en: 'Coach emergency', ar: 'ظرف طارئ للمدرب' },
+              ].map((chip) => (
+                <button
+                  key={chip.en}
+                  type="button"
+                  onClick={() => setRejectReason(lang === 'ar' ? chip.ar : chip.en)}
+                  className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-[11px] font-bold text-gray-700 transition-colors"
+                >
+                  {lang === 'ar' ? chip.ar : chip.en}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder={lang === 'ar' ? 'اكتب سبب الرفض بالتفصيل...' : 'Reason for rejection...'}
+              className="w-full h-24 p-3 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-red-500 mb-4"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setRejectModalSession(null)}
+              >
+                {lang === 'ar' ? 'تراجع' : 'Cancel'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleRejectSession}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold"
+              >
+                {lang === 'ar' ? 'تأكيد الرفض والإلغاء' : 'Confirm Rejection'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
