@@ -66,13 +66,27 @@ export default function EvaluateSessionPage() {
   // Active category tab in evaluation
   const [activeCategory, setActiveCategory] = useState<'technical' | 'tactical' | 'physical' | 'mental'>('technical')
 
-  useEffect(() => {
-    if (!sessionId) return
-    setLang(dataService.getLanguage())
-    const sess = dataService.getSessionById(sessionId)
-    setSession(sess)
+  const [allAcademyPlayers, setAllAcademyPlayers] = useState<Player[]>([])
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [allSessions, setAllSessions] = useState<Session[]>([])
 
-    dataService.syncWithSupabase()
+  // Reject / Cancel Modal state
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('Player did not show up (Did not come) / لم يحضر اللاعب')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    setLang(dataService.getLanguage())
+    const list = dataService.getPlayers()
+    setAllAcademyPlayers(list)
+    const allSess = dataService.getSessions()
+    setAllSessions(allSess)
+
+    if (sessionId) {
+      const sess = dataService.getSessionById(sessionId)
+      setSession(sess)
+      dataService.syncWithSupabase()
+    }
 
     // Pre-populate default 3 for skills
     const initial: Record<string, number> = {}
@@ -85,51 +99,95 @@ export default function EvaluateSessionPage() {
 
     const handleUpdate = () => {
       setLang(dataService.getLanguage())
-      const s = dataService.getSessionById(sessionId)
-      setSession(s)
+      setAllAcademyPlayers(dataService.getPlayers())
+      setAllSessions(dataService.getSessions())
+      if (sessionId) {
+        const s = dataService.getSessionById(sessionId)
+        setSession(s)
+      }
     }
     window.addEventListener('vamos_state_updated', handleUpdate)
     return () => window.removeEventListener('vamos_state_updated', handleUpdate)
   }, [sessionId])
 
+  useEffect(() => {
+    if (!session) return
+    const sps = (session.session_players?.map((sp) => sp.player).filter(Boolean) as Player[]) || []
+    if (sps.length > 0) {
+      setSelectedPlayerId(sps[activePlayerIndex]?.id || sps[0].id)
+    } else if (allAcademyPlayers.length > 0 && !selectedPlayerId) {
+      setSelectedPlayerId(allAcademyPlayers[0].id)
+    }
+  }, [session, activePlayerIndex, allAcademyPlayers])
+
   const t = translations[lang]
 
-  if (!session) {
-    return (
-      <div className="p-12 text-center bg-white rounded-3xl border border-gray-100">
-        <p className="text-sm font-bold text-gray-500">
-          {lang === 'ar' ? 'الجلسة غير موجودة' : 'Session not found'}
-        </p>
-        <Button onClick={() => router.push('/dashboard/schedule')} className="mt-4" size="sm">
-          {lang === 'ar' ? 'العودة' : 'Back'}
-        </Button>
-      </div>
-    )
-  }
-
-  const sessionPlayers = (session.session_players?.map((sp) => sp.player).filter(Boolean) as Player[]) || []
-  const [allAcademyPlayers, setAllAcademyPlayers] = useState<Player[]>([])
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
-
-  // Reject / Cancel Modal state
-  const [showRejectModal, setShowRejectModal] = useState(false)
-  const [rejectReason, setRejectReason] = useState('Player did not show up (Did not come) / لم يحضر اللاعب')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  useEffect(() => {
-    const list = dataService.getPlayers()
-    setAllAcademyPlayers(list)
-    if (sessionPlayers.length > 0) {
-      setSelectedPlayerId(sessionPlayers[activePlayerIndex]?.id || sessionPlayers[0].id)
-    } else if (list.length > 0 && !selectedPlayerId) {
-      setSelectedPlayerId(list[0].id)
-    }
-  }, [session, activePlayerIndex])
-
+  const sessionPlayers = (session?.session_players?.map((sp) => sp.player).filter(Boolean) as Player[]) || []
   const players = sessionPlayers.length > 0 ? sessionPlayers : allAcademyPlayers
   const currentPlayer = sessionPlayers.length > 0
     ? (sessionPlayers[activePlayerIndex] || sessionPlayers[0])
     : (allAcademyPlayers.find((p) => p.id === selectedPlayerId) || allAcademyPlayers[0])
+
+  if (!session) {
+    const availableSessions = allSessions.filter((s) => s.status !== 'cancelled')
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto pb-12">
+        <div className="p-6 sm:p-8 bg-white rounded-3xl border border-gray-100 shadow-sm text-center">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#176B50] flex items-center justify-center mx-auto mb-3">
+            <Award className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-black text-[#123C35] mb-1">
+            {lang === 'ar' ? 'اختر الجلسة المراد تقييمها' : 'Select a Session to Evaluate'}
+          </h2>
+          <p className="text-xs text-gray-500 mb-6">
+            {lang === 'ar'
+              ? 'يرجى اختيار إحدى الجلسات التالية لفتح نموذج التقييم الفني'
+              : 'Choose one of the sessions below to open the technical evaluation form'}
+          </p>
+
+          {availableSessions.length === 0 ? (
+            <div className="p-6 bg-gray-50 rounded-2xl text-xs text-gray-500 mb-4">
+              {lang === 'ar' ? 'لا توجد جلسات متاحة للتقييم حالياً' : 'No sessions available for evaluation'}
+            </div>
+          ) : (
+            <div className="space-y-2.5 text-left mb-6 max-h-[420px] overflow-y-auto pr-1">
+              {availableSessions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setSessionId(s.id)
+                    setSession(s)
+                    router.replace(`/dashboard/schedule/evaluate?id=${s.id}`)
+                  }}
+                  className="w-full p-4 rounded-2xl border border-gray-100 hover:border-[#176B50] hover:bg-emerald-50/30 flex items-center justify-between transition-all text-xs group cursor-pointer shadow-2xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-extrabold text-[#123C35] group-hover:text-[#176B50] text-sm">
+                        {s.title}
+                      </p>
+                      <StatusBadge status={s.status} type="session" />
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {s.date} • {s.start_time}-{s.end_time} • {s.court?.name} • Coach: {s.coach?.full_name}
+                    </p>
+                  </div>
+                  <span className="font-extrabold text-[#176B50] px-3.5 py-1.5 rounded-xl bg-emerald-50 group-hover:bg-[#176B50] group-hover:text-white transition-colors shrink-0">
+                    {lang === 'ar' ? 'بدء التقييم ←' : 'Evaluate →'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <Button onClick={() => router.push('/dashboard/schedule')} variant="outline" size="sm">
+            {lang === 'ar' ? 'العودة للجدول' : 'Back to Schedule'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const handleRatingChange = (key: string, val: number) => {
     setSkillRatings((prev) => ({ ...prev, [key]: val }))
